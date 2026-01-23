@@ -608,6 +608,7 @@ void Config::readSection(ConfigReadContext &s)
   static const char s_screens[] = "screens";
   static const char s_links[] = "links";
   static const char s_aliases[] = "aliases";
+  static const char s_scripts[] = "scripts";
 
   String line;
   if (!s.readLine(line)) {
@@ -640,6 +641,8 @@ void Config::readSection(ConfigReadContext &s)
     readSectionLinks(s);
   } else if (name == s_aliases) {
     readSectionAliases(s);
+  } else if (name == s_scripts) {
+    readSectionScripts(s);
   } else {
     throw XConfigRead(s, "unknown section name \"%{1}\"", name);
   }
@@ -935,6 +938,17 @@ void Config::readSectionAliases(ConfigReadContext &s)
     }
   }
   throw XConfigRead(s, "unexpected end of aliases section");
+}
+
+void Config::readSectionScripts(ConfigReadContext &s)
+{
+  String line;
+  while (s.readLine(line)) {
+    if (line == "end") {
+      return;
+    }
+  }
+  throw XConfigRead(s, "unexpected end of scripts section");
 }
 
 InputFilter::Condition *

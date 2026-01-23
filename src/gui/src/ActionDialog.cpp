@@ -100,9 +100,12 @@ void ActionDialog::accept()
   if (!sequenceWidget()->valid() && m_pButtonGroupType->checkedId() >= 0 && m_pButtonGroupType->checkedId() < 3)
     return;
 
+  int actionType = m_pButtonGroupType->checkedId();
+  if (actionType == 7 && m_pComboRunScript->currentText().isEmpty())
+    return;
+
   m_Action.setKeySequence(sequenceWidget()->keySequence());
 
-  int actionType = m_pButtonGroupType->checkedId();
   if (actionType == 7) {
     actionType = Action::runScript;
     m_Action.screenScripts().clear();
