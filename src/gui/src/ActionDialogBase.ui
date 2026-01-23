@@ -255,6 +255,37 @@
         </item>
        </layout>
       </item>
+      <item>
+       <layout class="QHBoxLayout">
+        <item>
+         <widget class="QRadioButton" name="m_pRadioRunScript">
+          <property name="text">
+           <string>Run script</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QComboBox" name="m_pComboRunScript">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
     </widget>
    </item>
@@ -627,6 +658,54 @@
     <hint type="destinationlabel">
      <x>185</x>
      <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pRadioRunScript</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pComboRunScript</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>100</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>350</x>
+     <y>384</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pRadioRunScript</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pKeySequenceWidgetHotkey</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>100</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>68</x>
+     <y>126</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pRadioRunScript</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pGroupBoxScreens</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>100</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>79</x>
+     <y>234</y>
     </hint>
    </hints>
   </connection>

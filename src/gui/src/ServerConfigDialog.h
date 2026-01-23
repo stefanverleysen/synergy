@@ -49,6 +49,11 @@ protected slots:
   void on_m_pButtonEditHotkey_clicked();
   void on_m_pButtonRemoveHotkey_clicked();
 
+  void on_m_pButtonNewScript_clicked();
+  void on_m_pListScripts_itemSelectionChanged();
+  void on_m_pButtonEditScript_clicked();
+  void on_m_pButtonRemoveScript_clicked();
+
   void on_m_pButtonNewAction_clicked();
   void on_m_pListActions_itemSelectionChanged();
   void on_m_pButtonEditAction_clicked();

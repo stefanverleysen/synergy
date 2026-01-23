@@ -38,82 +38,82 @@ public:
   virtual ~PlatformScreen();
 
   // IScreen overrides
-  virtual void *getEventTarget() const = 0;
-  virtual bool getClipboard(ClipboardID id, IClipboard *) const = 0;
-  virtual void getShape(SInt32 &x, SInt32 &y, SInt32 &width, SInt32 &height) const = 0;
-  virtual void getCursorPos(SInt32 &x, SInt32 &y) const = 0;
+  void *getEventTarget() const override = 0;
+  bool getClipboard(ClipboardID id, IClipboard *) const override = 0;
+  void getShape(SInt32 &x, SInt32 &y, SInt32 &width, SInt32 &height) const override = 0;
+  void getCursorPos(SInt32 &x, SInt32 &y) const override = 0;
 
   // IPrimaryScreen overrides
-  virtual void reconfigure(UInt32 activeSides) = 0;
-  virtual void warpCursor(SInt32 x, SInt32 y) = 0;
-  virtual UInt32 registerHotKey(KeyID key, KeyModifierMask mask) = 0;
-  virtual void unregisterHotKey(UInt32 id) = 0;
-  virtual void fakeInputBegin() = 0;
-  virtual void fakeInputEnd() = 0;
-  virtual SInt32 getJumpZoneSize() const = 0;
-  virtual bool isAnyMouseButtonDown(UInt32 &buttonID) const = 0;
-  virtual void getCursorCenter(SInt32 &x, SInt32 &y) const = 0;
+  void reconfigure(UInt32 activeSides) override = 0;
+  void warpCursor(SInt32 x, SInt32 y) override = 0;
+  UInt32 registerHotKey(KeyID key, KeyModifierMask mask) override = 0;
+  void unregisterHotKey(UInt32 id) override = 0;
+  void fakeInputBegin() override = 0;
+  void fakeInputEnd() override = 0;
+  SInt32 getJumpZoneSize() const override = 0;
+  bool isAnyMouseButtonDown(UInt32 &buttonID) const override = 0;
+  void getCursorCenter(SInt32 &x, SInt32 &y) const override = 0;
 
   // ISecondaryScreen overrides
-  virtual void fakeMouseButton(ButtonID id, bool press) = 0;
-  virtual void fakeMouseMove(SInt32 x, SInt32 y) = 0;
-  virtual void fakeMouseRelativeMove(SInt32 dx, SInt32 dy) const = 0;
-  virtual void fakeMouseWheel(SInt32 xDelta, SInt32 yDelta) const = 0;
+  void fakeMouseButton(ButtonID id, bool press) override = 0;
+  void fakeMouseMove(SInt32 x, SInt32 y) override = 0;
+  void fakeMouseRelativeMove(SInt32 dx, SInt32 dy) const override = 0;
+  void fakeMouseWheel(SInt32 xDelta, SInt32 yDelta) const override = 0;
 
   // IKeyState overrides
-  virtual void updateKeyMap();
-  virtual void updateKeyState();
-  virtual void setHalfDuplexMask(KeyModifierMask);
-  virtual void fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const String &);
-  virtual bool fakeKeyRepeat(KeyID id, KeyModifierMask mask, SInt32 count, KeyButton button, const String &lang);
-  virtual bool fakeKeyUp(KeyButton button);
-  virtual void fakeAllKeysUp();
-  virtual bool fakeCtrlAltDel();
-  virtual bool isKeyDown(KeyButton) const;
-  virtual KeyModifierMask getActiveModifiers() const;
-  virtual KeyModifierMask pollActiveModifiers() const;
-  virtual SInt32 pollActiveGroup() const;
-  virtual void pollPressedKeys(KeyButtonSet &pressedKeys) const;
-  virtual void clearStaleModifiers();
+  void updateKeyMap() override;
+  void updateKeyState() override;
+  void setHalfDuplexMask(KeyModifierMask) override;
+  void fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const String &) override;
+  bool fakeKeyRepeat(KeyID id, KeyModifierMask mask, SInt32 count, KeyButton button, const String &lang) override;
+  bool fakeKeyUp(KeyButton button) override;
+  void fakeAllKeysUp() override;
+  bool fakeCtrlAltDel() override;
+  bool isKeyDown(KeyButton) const override;
+  KeyModifierMask getActiveModifiers() const override;
+  KeyModifierMask pollActiveModifiers() const override;
+  SInt32 pollActiveGroup() const override;
+  void pollPressedKeys(KeyButtonSet &pressedKeys) const override;
+  void clearStaleModifiers() override;
 
-  virtual void setDraggingStarted(bool started)
+  void setDraggingStarted(bool started) override
   {
     m_draggingStarted = started;
   }
-  virtual bool isDraggingStarted();
-  virtual bool isFakeDraggingStarted()
+  bool isDraggingStarted() override;
+  bool isFakeDraggingStarted() override
   {
     return m_fakeDraggingStarted;
   }
-  virtual String &getDraggingFilename()
+  String &getDraggingFilename() override
   {
     return m_draggingFilename;
   }
-  virtual void clearDraggingFilename()
+  void clearDraggingFilename() override
   {
   }
 
   // IPlatformScreen overrides
-  virtual void enable() = 0;
-  virtual void disable() = 0;
-  virtual void enter() = 0;
-  virtual bool canLeave() = 0;
-  virtual void leave() = 0;
-  virtual bool setClipboard(ClipboardID, const IClipboard *) = 0;
-  virtual void checkClipboards() = 0;
-  virtual void openScreensaver(bool notify) = 0;
-  virtual void closeScreensaver() = 0;
-  virtual void screensaver(bool activate) = 0;
-  virtual void resetOptions() = 0;
-  virtual void setOptions(const OptionsList &options) = 0;
-  virtual void setSequenceNumber(UInt32) = 0;
-  virtual bool isPrimary() const = 0;
+  void enable() override = 0;
+  void disable() override = 0;
+  void enter() override = 0;
+  bool canLeave() override = 0;
+  void leave() override = 0;
+  bool setClipboard(ClipboardID, const IClipboard *) override = 0;
+  void checkClipboards() override = 0;
+  void openScreensaver(bool notify) override = 0;
+  void closeScreensaver() override = 0;
+  void screensaver(bool activate) override = 0;
+  void resetOptions() override = 0;
+  void setOptions(const OptionsList &options) override = 0;
+  void setSequenceNumber(UInt32) override = 0;
+  bool isPrimary() const override = 0;
 
-  virtual void fakeDraggingFiles(DragFileList fileList)
+  void fakeDraggingFiles(DragFileList fileList) override
   {
     throw std::runtime_error("fakeDraggingFiles not implemented");
   }
-  virtual const String &getDropTarget() const
+  const String &getDropTarget() const override
   {
     throw std::runtime_error("getDropTarget not implemented");
   }
@@ -137,7 +137,7 @@ protected:
   virtual IKeyState *getKeyState() const = 0;
 
   // IPlatformScreen overrides
-  virtual void handleSystemEvent(const Event &event, void *) = 0;
+  void handleSystemEvent(const Event &event, void *) override = 0;
 
   /*!
    * \brief mapClientScrollDirection
