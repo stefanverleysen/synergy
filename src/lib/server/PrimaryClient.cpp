@@ -250,6 +250,16 @@ void PrimaryClient::secureInputNotification(const String &app) const
   }
 }
 
+void PrimaryClient::syncScript(const String &name, const String &content)
+{
+  m_screen->cacheScript(name, content);
+}
+
+void PrimaryClient::runScript(const String &name)
+{
+  m_screen->runScript(name);
+}
+
 void PrimaryClient::resetOptions()
 {
   m_screen->resetOptions();

@@ -339,6 +339,18 @@ void ClientProxy1_0::secureInputNotification(const String &app) const
   LOG((CLOG_DEBUG "secureInputNotification not supported"));
 }
 
+void ClientProxy1_0::syncScript(const String &name, const String &content)
+{
+  // ignore -- not supported in protocol 1.0
+  LOG((CLOG_DEBUG "syncScript not supported"));
+}
+
+void ClientProxy1_0::runScript(const String &name)
+{
+  // ignore -- not supported in protocol 1.0
+  LOG((CLOG_DEBUG "runScript not supported"));
+}
+
 void ClientProxy1_0::screensaver(bool on)
 {
   LOG((CLOG_DEBUG1 "send screen saver to \"%s\" on=%d", getName().c_str(), on ? 1 : 0));

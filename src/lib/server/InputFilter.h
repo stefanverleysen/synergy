@@ -249,6 +249,24 @@ public:
     IEventQueue *m_events;
   };
 
+  // RunScriptAction
+  class RunScriptAction : public Action
+  {
+  public:
+    RunScriptAction(IEventQueue *events, const std::map<String, String> &screenScripts);
+
+    std::map<String, String> getScreenScripts() const;
+
+    // Action overrides
+    virtual Action *clone() const;
+    virtual String format() const;
+    virtual void perform(const Event &);
+
+  private:
+    std::map<String, String> m_screenScripts;
+    IEventQueue *m_events;
+  };
+
   // KeystrokeAction
   class KeystrokeAction : public Action
   {

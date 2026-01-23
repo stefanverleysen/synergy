@@ -322,6 +322,10 @@ ServerProxy::EResult ServerProxy::parseMessage(const UInt8 *code)
     dragInfoReceived();
   } else if (memcmp(code, kMsgDSecureInputNotification, 4) == 0) {
     secureInputNotification();
+  } else if (memcmp(code, kMsgDSyncScript, 4) == 0) {
+    syncScript();
+  } else if (memcmp(code, kMsgDRunScript, 4) == 0) {
+    runScript();
   }
 
   else if (memcmp(code, kMsgCClose, 4) == 0) {
@@ -915,4 +919,21 @@ void ServerProxy::checkMissedLanguages() const
   if (!missedLanguages.empty()) {
     LOG((CLOG_WARN "missing languages: %s", missedLanguages.c_str()));
   }
+}
+
+void ServerProxy::syncScript()
+{
+  String name;
+  String content;
+  ProtocolUtil::readf(m_stream, kMsgDSyncScript + 4, &name, &content);
+  LOG((CLOG_DEBUG "recv sync script \"%s\"", name.c_str()));
+  m_client->cacheScript(name, content);
+}
+
+void ServerProxy::runScript()
+{
+  String name;
+  ProtocolUtil::readf(m_stream, kMsgDRunScript + 4, &name);
+  LOG((CLOG_DEBUG "recv run script \"%s\"", name.c_str()));
+  m_client->executeScript(name);
 }

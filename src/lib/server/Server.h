@@ -123,6 +123,26 @@ public:
     char m_screens[1];
   };
 
+  //! Run script data
+  class RunScriptInfo
+  {
+  public:
+    static RunScriptInfo *alloc(const std::map<String, String> &screenScripts);
+
+  public:
+    std::map<String, String> m_screenScripts;
+  };
+
+  //! Sync scripts data
+  class SyncScriptsInfo
+  {
+  public:
+    static SyncScriptsInfo *alloc(const std::map<String, std::map<String, String>> &clientScripts);
+
+  public:
+    std::map<String, std::map<String, String>> m_clientScripts;
+  };
+
   /*!
   Start the server with the configuration \p config and the primary
   client (local screen) \p primaryClient.  The client retains
@@ -356,6 +376,8 @@ private:
   void handleFakeInputEndEvent(const Event &, void *);
   void handleFileChunkSendingEvent(const Event &, void *);
   void handleFileRecieveCompletedEvent(const Event &, void *);
+  void handleRunScriptEvent(const Event &, void *);
+  void handleSyncScriptsEvent(const Event &, void *);
 
   // event processing
   void onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum);

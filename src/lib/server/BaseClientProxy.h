@@ -92,6 +92,8 @@ public:
   virtual void fileChunkSending(UInt8 mark, char *data, size_t dataSize) = 0;
   virtual String getSecureInputApp() const = 0;
   virtual void secureInputNotification(const String &app) const = 0;
+  virtual void syncScript(const String &name, const String &content) = 0;
+  virtual void runScript(const String &name) = 0;
   virtual String getName() const;
   virtual deskflow::IStream *getStream() const = 0;
 

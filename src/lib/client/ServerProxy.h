@@ -128,6 +128,8 @@ private:
   void setServerLanguages();
   void setActiveServerLanguage(const String &language);
   void checkMissedLanguages() const;
+  void syncScript();
+  void runScript();
 
 private:
   typedef EResult (ServerProxy::*MessageParser)(const UInt8 *);

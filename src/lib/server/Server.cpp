@@ -169,6 +169,12 @@ Server::Server(
       new TMethodEventJob<Server>(this, &Server::handleLockCursorToScreenEvent)
   );
   m_events->adoptHandler(
+      m_events->forServer().runScript(), m_inputFilter, new TMethodEventJob<Server>(this, &Server::handleRunScriptEvent)
+  );
+  m_events->adoptHandler(
+      m_events->forServer().syncScripts(), this, new TMethodEventJob<Server>(this, &Server::handleSyncScriptsEvent)
+  );
+  m_events->adoptHandler(
       m_events->forIPrimaryScreen().fakeInputBegin(), m_inputFilter,
       new TMethodEventJob<Server>(this, &Server::handleFakeInputBeginEvent)
   );
@@ -1422,6 +1428,58 @@ void Server::handleFileRecieveCompletedEvent(const Event &event, void *)
   onFileRecieveCompleted();
 }
 
+void Server::handleRunScriptEvent(const Event &event, void *)
+{
+  RunScriptInfo *info = static_cast<RunScriptInfo *>(event.getData());
+  const auto &screenScripts = info->m_screenScripts;
+
+  for (const auto &clientPair : m_clients) {
+    const String &clientName = clientPair.first;
+    BaseClientProxy *client = clientPair.second;
+
+    String scriptName;
+    auto it = screenScripts.find(clientName);
+    if (it != screenScripts.end()) {
+      scriptName = it->second;
+    } else {
+      auto wildcard = screenScripts.find("*");
+      if (wildcard != screenScripts.end()) {
+        scriptName = wildcard->second;
+      }
+    }
+
+    if (!scriptName.empty()) {
+      LOG((CLOG_DEBUG "running script \"%s\" on client \"%s\"", scriptName.c_str(), clientName.c_str()));
+      client->runScript(scriptName);
+    }
+  }
+}
+
+void Server::handleSyncScriptsEvent(const Event &event, void *)
+{
+  SyncScriptsInfo *info = static_cast<SyncScriptsInfo *>(event.getData());
+  const auto &clientScripts = info->m_clientScripts;
+
+  for (const auto &clientPair : clientScripts) {
+    const String &clientName = clientPair.first;
+    const auto &scripts = clientPair.second;
+
+    auto clientIt = m_clients.find(clientName);
+    if (clientIt == m_clients.end()) {
+      LOG((CLOG_DEBUG "client \"%s\" not connected, skipping sync", clientName.c_str()));
+      continue;
+    }
+
+    BaseClientProxy *client = clientIt->second;
+    for (const auto &scriptPair : scripts) {
+      const String &scriptName = scriptPair.first;
+      const String &scriptContent = scriptPair.second;
+      LOG((CLOG_DEBUG "syncing script \"%s\" to client \"%s\"", scriptName.c_str(), clientName.c_str()));
+      client->syncScript(scriptName, scriptContent);
+    }
+  }
+}
+
 void Server::onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum)
 {
   ClipboardInfo &clipboard = m_clipboards[id];
@@ -2207,6 +2265,28 @@ Server::KeyboardBroadcastInfo *Server::KeyboardBroadcastInfo::alloc(State state,
   KeyboardBroadcastInfo *info = (KeyboardBroadcastInfo *)malloc(sizeof(KeyboardBroadcastInfo) + screens.size());
   info->m_state = state;
   std::copy(screens.c_str(), screens.c_str() + screens.size() + 1, info->m_screens);
+  return info;
+}
+
+//
+// Server::RunScriptInfo
+//
+
+Server::RunScriptInfo *Server::RunScriptInfo::alloc(const std::map<String, String> &screenScripts)
+{
+  RunScriptInfo *info = new RunScriptInfo();
+  info->m_screenScripts = screenScripts;
+  return info;
+}
+
+//
+// Server::SyncScriptsInfo
+//
+
+Server::SyncScriptsInfo *Server::SyncScriptsInfo::alloc(const std::map<String, std::map<String, String>> &clientScripts)
+{
+  SyncScriptsInfo *info = new SyncScriptsInfo();
+  info->m_clientScripts = clientScripts;
   return info;
 }
 

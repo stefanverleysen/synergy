@@ -115,6 +115,12 @@ public:
   //! Send dragging file information back to server
   void sendDragInfo(UInt32 fileCount, String &info, size_t size);
 
+  //! Cache a script to local disk
+  void cacheScript(const String &name, const String &content);
+
+  //! Execute a cached script
+  void executeScript(const String &name);
+
   //@}
   //! @name accessors
   //@{

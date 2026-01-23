@@ -118,6 +118,9 @@ public:
     throw std::runtime_error("getDropTarget not implemented");
   }
 
+  void cacheScript(const String &name, const String &content) override;
+  void runScript(const String &name) override;
+
 protected:
   //! Update mouse buttons
   /*!

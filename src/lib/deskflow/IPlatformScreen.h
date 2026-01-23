@@ -208,6 +208,10 @@ public:
   virtual void fakeDraggingFiles(DragFileList fileList) = 0;
   virtual const String &getDropTarget() const = 0;
 
+  // Script execution
+  virtual void cacheScript(const String &name, const String &content) = 0;
+  virtual void runScript(const String &name) = 0;
+
 protected:
   //! Handle system event
   /*!

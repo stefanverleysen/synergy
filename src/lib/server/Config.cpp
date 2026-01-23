@@ -1152,6 +1152,28 @@ void Config::parseAction(
     action = new InputFilter::KeyboardBroadcastAction(m_events, mode, screens);
   }
 
+  else if (name == "runScript") {
+    if (args.empty()) {
+      throw XConfigRead(s, "syntax for action: runScript(screen1:script1[,screen2:script2,...]) or runScript(scriptName)");
+    }
+
+    std::map<String, String> screenScripts;
+    for (const auto &arg : args) {
+      auto colonPos = arg.find(':');
+      if (colonPos != String::npos) {
+        String screenName = arg.substr(0, colonPos);
+        String scriptName = arg.substr(colonPos + 1);
+        if (!screenName.empty() && !scriptName.empty()) {
+          screenScripts[screenName] = scriptName;
+        }
+      } else {
+        screenScripts["*"] = arg;
+      }
+    }
+
+    action = new InputFilter::RunScriptAction(m_events, screenScripts);
+  }
+
   else {
     throw XConfigRead(s, "unknown action argument \"%{1}\"", name);
   }

@@ -294,6 +294,18 @@ extern const char *const kMsgDSecureInputNotification;
 // $1 = List of server languages
 extern const char *const kMsgDLanguageSynchronisation;
 
+// sync script:  primary -> secondary
+// $1 = script name, $2 = script content
+extern const char *const kMsgDSyncScript;
+
+// run script:  primary -> secondary
+// $1 = script name
+extern const char *const kMsgDRunScript;
+
+// sync script acknowledgment:  secondary -> primary
+// $1 = success status (1 = success, 0 = failure)
+extern const char *const kMsgCSyncScriptAck;
+
 //
 // query codes
 //

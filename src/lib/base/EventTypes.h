@@ -459,7 +459,9 @@ public:
         m_switchInDirection(Event::kUnknown),
         m_keyboardBroadcast(Event::kUnknown),
         m_lockCursorToScreen(Event::kUnknown),
-        m_screenSwitched(Event::kUnknown)
+        m_screenSwitched(Event::kUnknown),
+        m_runScript(Event::kUnknown),
+        m_syncScripts(Event::kUnknown)
   {
   }
 
@@ -527,6 +529,21 @@ public:
   */
   Event::Type screenSwitched();
 
+  //! Get run script event type
+  /*!
+  Returns the run script event type.  The server responds to this by
+  sending a run script message to clients.  The event data is a
+  \c RunScriptInfo*.
+  */
+  Event::Type runScript();
+
+  //! Get sync scripts event type
+  /*!
+  Returns the sync scripts event type.  The server responds to this by
+  sending scripts to clients.  The event data is a \c SyncScriptsInfo*.
+  */
+  Event::Type syncScripts();
+
   //@}
 
 private:
@@ -538,6 +555,8 @@ private:
   Event::Type m_keyboardBroadcast;
   Event::Type m_lockCursorToScreen;
   Event::Type m_screenSwitched;
+  Event::Type m_runScript;
+  Event::Type m_syncScripts;
 };
 
 class ServerAppEvents : public EventTypes

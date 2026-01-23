@@ -26,6 +26,8 @@ public:
   ~ClientProxy1_8() override = default;
 
   void keyDown(KeyID, KeyModifierMask, KeyButton, const String &) override;
+  void syncScript(const String &name, const String &content) override;
+  void runScript(const String &name) override;
 
 private:
   void synchronizeLanguages() const;

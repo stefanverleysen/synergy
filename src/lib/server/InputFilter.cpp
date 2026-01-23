@@ -443,6 +443,49 @@ void InputFilter::KeyboardBroadcastAction::perform(const Event &event)
   );
 }
 
+InputFilter::RunScriptAction::RunScriptAction(IEventQueue *events, const std::map<String, String> &screenScripts)
+    : m_screenScripts(screenScripts),
+      m_events(events)
+{
+}
+
+std::map<String, String> InputFilter::RunScriptAction::getScreenScripts() const
+{
+  return m_screenScripts;
+}
+
+InputFilter::Action *InputFilter::RunScriptAction::clone() const
+{
+  return new RunScriptAction(*this);
+}
+
+String InputFilter::RunScriptAction::format() const
+{
+  String s = "runScript(";
+  bool first = true;
+  for (const auto &pair : m_screenScripts) {
+    if (!first) {
+      s += ",";
+    }
+    first = false;
+    if (pair.first == "*") {
+      s += pair.second;
+    } else {
+      s += pair.first;
+      s += ":";
+      s += pair.second;
+    }
+  }
+  s += ")";
+  return s;
+}
+
+void InputFilter::RunScriptAction::perform(const Event &event)
+{
+  Server::RunScriptInfo *info = Server::RunScriptInfo::alloc(m_screenScripts);
+  m_events->addEvent(Event(m_events->forServer().runScript(), event.getTarget(), info, Event::kDeliverImmediately));
+}
+
 InputFilter::KeystrokeAction::KeystrokeAction(IEventQueue *events, IPlatformScreen::KeyInfo *info, bool press)
     : m_keyInfo(info),
       m_press(press),
