@@ -1588,7 +1588,6 @@ void OSXScreen::watchSystemPowerThread(void *)
   LOG((CLOG_DEBUG "carbon loop has stopped"));
 
   // cleanup
-  CFNotificationCenterRef darwinCenter = CFNotificationCenterGetDarwinNotifyCenter();
   CFNotificationCenterRemoveObserver(darwinCenter, this, CFSTR("com.apple.screenIsLocked"), NULL);
   CFNotificationCenterRemoveObserver(darwinCenter, this, CFSTR("com.apple.screenIsUnlocked"), NULL);
 
