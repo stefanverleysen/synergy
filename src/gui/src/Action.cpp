@@ -83,7 +83,8 @@ QString Action::text() const
     break;
 
   case lockAllScreens:
-    break;
+    // lockAllScreens has no arguments, return without parentheses
+    return QString(m_ActionTypeNames[type()]);
   default:
     Q_ASSERT(0);
     break;

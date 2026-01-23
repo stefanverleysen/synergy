@@ -322,7 +322,7 @@ InputFilter::Action *InputFilter::LockAllScreensAction::clone() const
 
 String InputFilter::LockAllScreensAction::format() const
 {
-  return "lockAllScreens()";
+  return "lockAllScreens";
 }
 
 void InputFilter::LockAllScreensAction::perform(const Event &event)

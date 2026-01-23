@@ -1126,7 +1126,8 @@ void Config::parseAction(
   }
 
   else if (name == "lockAllScreens") {
-    if (args.size() != 0) {
+    // Empty parentheses () produce one empty arg, so accept that case too
+    if (args.size() > 1 || (args.size() == 1 && !args[0].empty())) {
       throw XConfigRead(s, "syntax for action: lockAllScreens()");
     }
 
