@@ -18,7 +18,22 @@
       "Bash(cmake:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(where vcpkg:*)"
+      "Bash(where vcpkg:*)",
+      "Bash(open:*)",
+      "Bash(./build/bin/synergy.app/Contents/MacOS/synergy:*)",
+      "Bash(osascript:*)",
+      "Bash(pkill:*)",
+      "Bash(defaults read:*)",
+      "Bash(defaults delete:*)",
+      "Bash(ping:*)",
+      "Bash(nc:*)",
+      "Bash(./build/bin/synergy.app/Contents/MacOS/synergy-client:*)",
+      "Bash(xattr:*)",
+      "Bash(npm ls:*)",
+      "Bash(claude /doctor)",
+      "Bash(claude doctor)",
+      "Bash(claude --version:*)",
+      "Bash(find:*)"
     ]
   }
 }

@@ -1686,7 +1686,9 @@ void OSXScreen::lockScreen()
     Lock lock(m_pmMutex);
     m_remoteLockPending = true;
   }
-  system("/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend");
+  // Modern macOS (10.13+) - use osascript to trigger Ctrl+Cmd+Q lock shortcut
+  // The old CGSession path no longer exists on modern macOS
+  system("osascript -e 'tell application \"System Events\" to keystroke \"q\" using {command down, control down}'");
 }
 
 void OSXScreen::wakeScreen()

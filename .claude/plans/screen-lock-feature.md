@@ -75,7 +75,7 @@ When any connected machine locks its screen, automatically lock ALL other connec
 | File | Changes |
 |------|---------|
 | `src/lib/platform/OSXScreen.h` | Add `m_screenLocked`, `m_remoteLockPending`, `lockScreen()`, static callback (after line 187) |
-| `src/lib/platform/OSXScreen.mm` | Implement Darwin notification listener + CGSession lock |
+| `src/lib/platform/OSXScreen.mm` | Implement Darwin notification listener + osascript lock |
 
 **Detailed Changes:**
 - Member variables (after line 347): `bool m_screenLocked`, `bool m_remoteLockPending`
@@ -88,7 +88,7 @@ When any connected machine locks its screen, automatically lock ALL other connec
 **Detection**: `CFNotificationCenterGetDarwinNotifyCenter()` with:
   - `com.apple.screenIsLocked` (lock)
   - `com.apple.screenIsUnlocked` (unlock)
-**Trigger**: `system("/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend")`
+**Trigger**: `system("osascript -e 'tell application \"System Events\" to keystroke \"q\" using {command down, control down}'")`
 
 ### Platform: Linux/X11
 
@@ -204,7 +204,7 @@ When any connected machine locks its screen, automatically lock ALL other connec
 3. `OSXScreen.mm` `watchSystemPowerThread` - Register Darwin notifications after line 1534
 4. `OSXScreen.mm` - Implement `screenLockCallback()` static wrapper
 5. `OSXScreen.mm` - Implement `handleScreenLockChange()` instance handler
-6. `OSXScreen.mm` - Implement `lockScreen()` using CGSession
+6. `OSXScreen.mm` - Implement `lockScreen()` using osascript (modern macOS)
 7. `OSXScreen.mm` `setOptions()` - Implement option handling (currently empty at line 917)
 8. `OSXScreen.mm` cleanup - Unregister notifications after line 1581
 
@@ -335,8 +335,9 @@ CFNotificationCenterAddObserver(
 CFNotificationCenterRemoveObserver(center, this, CFSTR("com.apple.screenIsLocked"), NULL);
 CFNotificationCenterRemoveObserver(center, this, CFSTR("com.apple.screenIsUnlocked"), NULL);
 
-// Trigger - CGSession
-system("/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend");
+// Trigger - Modern macOS (10.13+) uses osascript to simulate Ctrl+Cmd+Q
+// The old CGSession path no longer exists on modern macOS
+system("osascript -e 'tell application \"System Events\" to keystroke \"q\" using {command down, control down}'");
 ```
 
 ### Linux (X11/Wayland)

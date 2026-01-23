@@ -42,7 +42,9 @@ include_directories(./src)
 # gui library autogen headers:
 # qt doesn't seem to auto include the autogen headers for libraries.
 # For multi-config generators (Visual Studio), use include_$<CONFIG>
+# For single-config generators (Makefiles), use include
 include_directories(${PROJECT_BINARY_DIR}/src/lib/gui/gui_autogen/include_$<CONFIG>)
+include_directories(${PROJECT_BINARY_DIR}/src/lib/gui/gui_autogen/include)
 
 # generated includes
 include_directories(${PROJECT_BINARY_DIR}/config)
