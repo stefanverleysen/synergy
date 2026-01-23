@@ -947,6 +947,28 @@ void Config::readSectionScripts(ConfigReadContext &s)
     if (line == "end") {
       return;
     }
+
+    // Format: scriptName:platform = content
+    String::size_type eqPos = line.find('=');
+    if (eqPos == String::npos) {
+      continue;
+    }
+
+    String nameAndPlatform = line.substr(0, eqPos);
+    String content = line.substr(eqPos + 1);
+
+    // Trim whitespace
+    while (!nameAndPlatform.empty() && (nameAndPlatform.back() == ' ' || nameAndPlatform.back() == '\t')) {
+      nameAndPlatform.pop_back();
+    }
+    while (!content.empty() && (content.front() == ' ' || content.front() == '\t')) {
+      content.erase(0, 1);
+    }
+
+    // Store as "scriptName:platform" -> content
+    if (!nameAndPlatform.empty() && !content.empty()) {
+      m_scripts[nameAndPlatform] = content;
+    }
   }
   throw XConfigRead(s, "unexpected end of scripts section");
 }

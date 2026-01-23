@@ -53,6 +53,7 @@ protected slots:
   void on_m_pListScripts_itemSelectionChanged();
   void on_m_pButtonEditScript_clicked();
   void on_m_pButtonRemoveScript_clicked();
+  void on_m_pButtonSyncScripts_clicked();
 
   void on_m_pButtonNewAction_clicked();
   void on_m_pListActions_itemSelectionChanged();

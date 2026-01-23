@@ -23,6 +23,7 @@
 #include "ScreenSettingsDialog.h"
 #include "ScriptDialog.h"
 #include "ServerConfig.h"
+#include "SyncScriptsDialog.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -405,6 +406,46 @@ void ServerConfigDialog::on_m_pButtonRemoveScript_clicked()
   serverConfig().scripts().removeAt(idx);
   delete m_pListScripts->item(idx);
   onChange();
+}
+
+void ServerConfigDialog::on_m_pButtonSyncScripts_clicked()
+{
+  QStringList clients;
+  foreach (const Screen &screen, serverConfig().screens()) {
+    if (!screen.isNull() && !screen.isServer()) {
+      clients << screen.name();
+    }
+  }
+
+  if (clients.isEmpty()) {
+    QMessageBox::warning(this, tr("No Clients"), tr("No client computers configured. Add computers first."));
+    return;
+  }
+
+  if (serverConfig().scripts().isEmpty()) {
+    QMessageBox::warning(this, tr("No Scripts"), tr("No scripts defined. Create scripts first."));
+    return;
+  }
+
+  SyncScriptsDialog dlg(this, serverConfig(), clients);
+  if (dlg.exec() == QDialog::Accepted) {
+    auto syncMap = dlg.getSyncMap();
+
+    if (syncMap.isEmpty()) {
+      QMessageBox::information(this, tr("Nothing to Sync"), tr("No scripts selected for syncing. Select a platform version for at least one client."));
+      return;
+    }
+
+    // TODO: Send scripts to clients via protocol
+    QString msg;
+    for (auto clientIt = syncMap.constBegin(); clientIt != syncMap.constEnd(); ++clientIt) {
+      msg += clientIt.key() + ":\n";
+      for (auto scriptIt = clientIt.value().constBegin(); scriptIt != clientIt.value().constEnd(); ++scriptIt) {
+        msg += "  - " + scriptIt.key() + "\n";
+      }
+    }
+    QMessageBox::information(this, tr("Scripts Queued"), tr("Scripts will be synced when clients connect:\n\n%1").arg(msg));
+  }
 }
 
 void ServerConfigDialog::on_m_pButtonNewAction_clicked()

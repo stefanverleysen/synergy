@@ -326,6 +326,16 @@ void Server::adoptClient(BaseClientProxy *client)
   // send configuration options to client
   sendOptions(client);
 
+  // sync scripts to client
+  const auto &scripts = m_config->getScripts();
+  if (!scripts.empty()) {
+    LOG((CLOG_INFO "syncing %d scripts to client \"%s\"", scripts.size(), getName(client).c_str()));
+    for (const auto &script : scripts) {
+      client->syncScript(script.first, script.second);
+      LOG((CLOG_NOTE "synced script \"%s\" to client \"%s\"", script.first.c_str(), getName(client).c_str()));
+    }
+  }
+
   // activate screen saver on new client if active on the primary screen
   if (m_activeSaver != NULL) {
     client->screensaver(true);
