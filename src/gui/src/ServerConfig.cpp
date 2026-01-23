@@ -78,7 +78,7 @@ bool ServerConfig::operator==(const ServerConfig &sc) const
          m_HasSwitchDelay == sc.m_HasSwitchDelay && m_SwitchDelay == sc.m_SwitchDelay &&
          m_HasSwitchDoubleTap == sc.m_HasSwitchDoubleTap && m_SwitchDoubleTap == sc.m_SwitchDoubleTap &&
          m_SwitchCornerSize == sc.m_SwitchCornerSize && m_SwitchCorners == sc.m_SwitchCorners &&
-         m_Hotkeys == sc.m_Hotkeys && m_pAppConfig == sc.m_pAppConfig &&
+         m_Hotkeys == sc.m_Hotkeys && m_Scripts == sc.m_Scripts && m_pAppConfig == sc.m_pAppConfig &&
          m_DisableLockToScreen == sc.m_DisableLockToScreen && m_ClipboardSharing == sc.m_ClipboardSharing &&
          m_ClipboardSharingSize == sc.m_ClipboardSharingSize && m_pMainWindow == sc.m_pMainWindow;
 }

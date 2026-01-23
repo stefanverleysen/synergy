@@ -34,6 +34,12 @@ struct Script
   QString windowsContent;
   QString macContent;
   QString linuxContent;
+
+  bool operator==(const Script &other) const
+  {
+    return name == other.name && windowsContent == other.windowsContent && macContent == other.macContent &&
+           linuxContent == other.linuxContent;
+  }
 };
 
 class QTextStream;
