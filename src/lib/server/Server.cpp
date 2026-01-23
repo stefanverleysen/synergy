@@ -89,6 +89,7 @@ Server::Server(
       m_disableLockToScreen(false),
       m_enableClipboard(true),
       m_maximumClipboardSize(INT_MAX),
+      m_lockAllScreens(false),
       m_sendDragInfoThread(nullptr),
       m_waitDragInfoThread(true),
       m_args(args)
@@ -169,12 +170,24 @@ Server::Server(
       new TMethodEventJob<Server>(this, &Server::handleLockCursorToScreenEvent)
   );
   m_events->adoptHandler(
+      m_events->forServer().lockAllScreens(), m_inputFilter,
+      new TMethodEventJob<Server>(this, &Server::handleLockAllScreensEvent)
+  );
+  m_events->adoptHandler(
       m_events->forIPrimaryScreen().fakeInputBegin(), m_inputFilter,
       new TMethodEventJob<Server>(this, &Server::handleFakeInputBeginEvent)
   );
   m_events->adoptHandler(
       m_events->forIPrimaryScreen().fakeInputEnd(), m_inputFilter,
       new TMethodEventJob<Server>(this, &Server::handleFakeInputEndEvent)
+  );
+  m_events->adoptHandler(
+      m_events->forIScreen().screenLocked(), m_primaryClient->getEventTarget(),
+      new TMethodEventJob<Server>(this, &Server::handleScreenLockedEvent)
+  );
+  m_events->adoptHandler(
+      m_events->forIScreen().screenUnlocked(), m_primaryClient->getEventTarget(),
+      new TMethodEventJob<Server>(this, &Server::handleScreenUnlockedEvent)
   );
 
   if (m_args.m_enableDragDrop) {
@@ -1110,6 +1123,11 @@ void Server::processOptions()
       } else {
         m_maximumClipboardSize = static_cast<size_t>(value);
       }
+    } else if (id == kOptionLockAllScreens) {
+      m_lockAllScreens = (value != 0);
+      if (m_lockAllScreens) {
+        LOG((CLOG_NOTE "lock all screens is enabled"));
+      }
     }
   }
   if (m_relativeMoves && !newRelativeMoves) {
@@ -1402,6 +1420,22 @@ void Server::handleLockCursorToScreenEvent(const Event &event, void *)
   }
 }
 
+void Server::handleLockAllScreensEvent(const Event &, void *)
+{
+  LOG((CLOG_DEBUG "lock all screens hotkey triggered"));
+
+  String originName = getName(m_primaryClient);
+
+  for (auto &entry : m_clients) {
+    BaseClientProxy *client = entry.second;
+    if (client != m_primaryClient) {
+      client->screenLock(true, originName);
+    }
+  }
+
+  m_screen->lockScreen();
+}
+
 void Server::handleFakeInputBeginEvent(const Event &, void *)
 {
   m_primaryClient->fakeInputBegin();
@@ -1420,6 +1454,29 @@ void Server::handleFileChunkSendingEvent(const Event &event, void *)
 void Server::handleFileRecieveCompletedEvent(const Event &event, void *)
 {
   onFileRecieveCompleted();
+}
+
+void Server::handleScreenLockedEvent(const Event &event, void *)
+{
+  if (!m_lockAllScreens) {
+    return;
+  }
+
+  LOG((CLOG_DEBUG "primary screen locked, broadcasting to all clients"));
+
+  String originName = getName(m_primaryClient);
+
+  for (auto &entry : m_clients) {
+    BaseClientProxy *client = entry.second;
+    if (client != m_primaryClient) {
+      client->screenLock(true, originName);
+    }
+  }
+}
+
+void Server::handleScreenUnlockedEvent(const Event &event, void *)
+{
+  LOG((CLOG_DEBUG "primary screen unlocked"));
 }
 
 void Server::onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum)

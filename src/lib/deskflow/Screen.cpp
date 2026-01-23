@@ -493,4 +493,9 @@ String Screen::getSecureInputApp() const
   return m_screen->getSecureInputApp();
 }
 
+void Screen::lockScreen()
+{
+  m_screen->lockScreen();
+}
+
 } // namespace deskflow

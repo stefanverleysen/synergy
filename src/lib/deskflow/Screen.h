@@ -243,6 +243,12 @@ public:
   */
   String getSecureInputApp() const;
 
+  //! Lock the screen
+  /*!
+  Triggers the OS screen lock mechanism.
+  */
+  void lockScreen();
+
   //@}
   //! @name accessors
   //@{

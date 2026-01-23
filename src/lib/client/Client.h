@@ -189,6 +189,7 @@ public:
   virtual void mouseRelativeMove(SInt32 xRel, SInt32 yRel);
   virtual void mouseWheel(SInt32 xDelta, SInt32 yDelta);
   virtual void screensaver(bool activate);
+  void screenLock(bool lock, const String &origin);
   virtual void resetOptions();
   virtual void setOptions(const OptionsList &options);
   virtual String getName() const;

@@ -294,6 +294,10 @@ extern const char *const kMsgDSecureInputNotification;
 // $1 = List of server languages
 extern const char *const kMsgDLanguageSynchronisation;
 
+// screen lock:  primary <-> secondary
+// $1 = lock state (1 = locked, 0 = unlocked), $2 = originating screen name
+extern const char *const kMsgDScreenLock;
+
 //
 // query codes
 //

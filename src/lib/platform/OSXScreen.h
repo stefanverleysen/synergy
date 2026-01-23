@@ -100,6 +100,7 @@ public:
   void openScreensaver(bool notify) override;
   void closeScreensaver() override;
   void screensaver(bool activate) override;
+  void lockScreen() override;
   void resetOptions() override;
   void setOptions(const OptionsList &options) override;
   void setSequenceNumber(UInt32) override;
@@ -186,6 +187,13 @@ private:
   void handlePowerChangeRequest(natural_t messageType, void *messageArgument);
 
   void handleConfirmSleep(const Event &event, void *);
+
+  // screen lock support
+  static void screenLockCallback(
+      CFNotificationCenterRef center, void *observer, CFNotificationName name, const void *object,
+      CFDictionaryRef userInfo
+  );
+  void handleScreenLockChange(bool locked);
 
   // global hotkey operating mode
   static bool isGlobalHotKeyOperatingModeAvailable();
@@ -345,6 +353,10 @@ private:
 #endif
 
   OSXPowerManager m_powerManager;
+
+  // screen lock stuff
+  bool m_screenLocked;
+  bool m_remoteLockPending;
 
   class OSXScreenImpl *m_impl;
 };

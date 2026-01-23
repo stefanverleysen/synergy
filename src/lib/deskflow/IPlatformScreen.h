@@ -119,6 +119,12 @@ public:
   */
   virtual void screensaver(bool activate) = 0;
 
+  //! Lock the screen
+  /*!
+  Lock the workstation screen. This triggers the OS screen lock.
+  */
+  virtual void lockScreen() = 0;
+
   //! Notify of options changes
   /*!
   Reset all options to their default values.

@@ -107,3 +107,7 @@ if(APPLE)
   find_library(COCOA_LIBRARY Cocoa)
   target_link_libraries(platform ${COCOA_LIBRARY})
 endif()
+
+if(WIN32)
+  target_link_libraries(platform Wtsapi32)
+endif()

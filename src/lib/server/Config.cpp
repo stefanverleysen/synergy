@@ -1123,6 +1123,14 @@ void Config::parseAction(
     action = new InputFilter::RestartServer(m_events, mode);
   }
 
+  else if (name == "lockAllScreens") {
+    if (args.size() != 0) {
+      throw XConfigRead(s, "syntax for action: lockAllScreens()");
+    }
+
+    action = new InputFilter::LockAllScreensAction(m_events);
+  }
+
   else if (name == "keyboardBroadcast") {
     if (args.size() > 2) {
       throw XConfigRead(s, "syntax for action: keyboardBroadcast([{off|on|toggle}[,screens]])");

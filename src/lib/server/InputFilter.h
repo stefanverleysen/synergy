@@ -185,6 +185,20 @@ public:
     IEventQueue *m_events;
   };
 
+  class LockAllScreensAction : public Action
+  {
+  public:
+    LockAllScreensAction(IEventQueue *events);
+
+    // Action overrides
+    virtual Action *clone() const;
+    virtual String format() const;
+    virtual void perform(const Event &);
+
+  private:
+    IEventQueue *m_events;
+  };
+
   // SwitchToScreenAction
   class SwitchToScreenAction : public Action
   {

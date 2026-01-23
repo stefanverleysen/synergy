@@ -41,6 +41,7 @@
 #include "platform/MSWindowsScreenSaver.h"
 
 #include <Shlobj.h>
+#include <Wtsapi32.h>
 #include <comutil.h>
 #include <string.h>
 
@@ -116,6 +117,8 @@ MSWindowsScreen::MSWindowsScreen(
       m_screensaver(NULL),
       m_screensaverNotify(false),
       m_screensaverActive(false),
+      m_screenLocked(false),
+      m_remoteLockPending(false),
       m_window(NULL),
       m_nextClipboardWindow(NULL),
       m_ownClipboard(false),
@@ -149,6 +152,7 @@ MSWindowsScreen::MSWindowsScreen(
     updateScreenShape();
     m_class = createWindowClass();
     m_window = createWindow(m_class, DESKFLOW_APP_NAME);
+    WTSRegisterSessionNotification(m_window, NOTIFY_FOR_THIS_SESSION);
     setupMouseKeys();
     LOG((CLOG_DEBUG "screen shape: %d,%d %dx%d %s", m_x, m_y, m_w, m_h, m_multimon ? "(multi-monitor)" : ""));
     LOG((CLOG_DEBUG "window is 0x%08x", m_window));
@@ -200,6 +204,7 @@ MSWindowsScreen::~MSWindowsScreen()
   delete m_keyState;
   delete m_desks;
   delete m_screensaver;
+  WTSUnRegisterSessionNotification(m_window);
   destroyWindow(m_window);
   destroyClass(m_class);
 
@@ -466,6 +471,13 @@ void MSWindowsScreen::screensaver(bool activate)
   } else {
     m_screensaver->deactivate();
   }
+}
+
+void MSWindowsScreen::lockScreen()
+{
+  LOG((CLOG_DEBUG "locking workstation"));
+  m_remoteLockPending = true;
+  LockWorkStation();
 }
 
 void MSWindowsScreen::resetOptions()
@@ -1083,6 +1095,24 @@ bool MSWindowsScreen::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LRES
       setupMouseKeys();
     }
     break;
+
+  case WM_WTSSESSION_CHANGE:
+    switch (wParam) {
+    case WTS_SESSION_LOCK:
+      LOG((CLOG_DEBUG "session locked"));
+      if (!m_remoteLockPending) {
+        m_screenLocked = true;
+        m_events->addEvent(Event(m_events->forIScreen().screenLocked(), getEventTarget()));
+      }
+      m_remoteLockPending = false;
+      break;
+    case WTS_SESSION_UNLOCK:
+      LOG((CLOG_DEBUG "session unlocked"));
+      m_screenLocked = false;
+      m_events->addEvent(Event(m_events->forIScreen().screenUnlocked(), getEventTarget()));
+      break;
+    }
+    return true;
   }
 
   return false;

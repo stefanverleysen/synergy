@@ -80,7 +80,8 @@ bool ServerConfig::operator==(const ServerConfig &sc) const
          m_SwitchCornerSize == sc.m_SwitchCornerSize && m_SwitchCorners == sc.m_SwitchCorners &&
          m_Hotkeys == sc.m_Hotkeys && m_pAppConfig == sc.m_pAppConfig &&
          m_DisableLockToScreen == sc.m_DisableLockToScreen && m_ClipboardSharing == sc.m_ClipboardSharing &&
-         m_ClipboardSharingSize == sc.m_ClipboardSharingSize && m_pMainWindow == sc.m_pMainWindow;
+         m_ClipboardSharingSize == sc.m_ClipboardSharingSize && m_LockAllScreens == sc.m_LockAllScreens &&
+         m_pMainWindow == sc.m_pMainWindow;
 }
 
 void ServerConfig::save(QFile &file) const
@@ -127,6 +128,7 @@ void ServerConfig::commit()
   settings().setValue("disableLockToScreen", disableLockToScreen());
   settings().setValue("clipboardSharing", clipboardSharing());
   settings().setValue("clipboardSharingSize", QVariant::fromValue(clipboardSharingSize()));
+  settings().setValue("lockAllScreens", lockAllScreens());
 
   if (!getClientAddress().isEmpty()) {
     settings().setValue("clientAddress", getClientAddress());
@@ -182,6 +184,7 @@ void ServerConfig::recall()
       settings().value("clipboardSharingSize", (int)ServerConfig::defaultClipboardSharingSize()).toULongLong()
   );
   setClipboardSharing(settings().value("clipboardSharing", true).toBool());
+  setLockAllScreens(settings().value("lockAllScreens", false).toBool());
   setClientAddress(settings().value("clientAddress", "").toString());
 
   readSettings(settings(), switchCorners(), "switchCorner", 0, static_cast<int>(NumSwitchCorners));
@@ -286,6 +289,8 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
             << "clipboardSharing = " << (config.clipboardSharing() ? "true" : "false") << Qt::endl;
   outStream << "\t"
             << "clipboardSharingSize = " << config.clipboardSharingSize() << Qt::endl;
+  outStream << "\t"
+            << "lockAllScreens = " << (config.lockAllScreens() ? "true" : "false") << Qt::endl;
 
   if (!config.getClientAddress().isEmpty()) {
     outStream << "\t"

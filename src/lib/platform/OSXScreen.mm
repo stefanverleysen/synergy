@@ -19,6 +19,7 @@
 #include "platform/OSXScreen.h"
 
 #include "arch/XArch.h"
+#include "deskflow/option_types.h"
 #include "base/EventQueue.h"
 #include "base/IEventQueue.h"
 #include "base/Log.h"
@@ -118,6 +119,8 @@ OSXScreen::OSXScreen(
       m_lastSingleClickYCursor(0),
       m_events(events),
       m_getDropTargetThread(nullptr),
+      m_screenLocked(false),
+      m_remoteLockPending(false),
       m_impl(NULL)
 {
   m_displayID = CGMainDisplayID();
@@ -1533,6 +1536,17 @@ void OSXScreen::watchSystemPowerThread(void *)
     CFRunLoopAddSource(m_pmRunloop, runloopSourceRef, kCFRunLoopCommonModes);
   }
 
+  // install screen lock/unlock notifications
+  CFNotificationCenterRef darwinCenter = CFNotificationCenterGetDarwinNotifyCenter();
+  CFNotificationCenterAddObserver(
+      darwinCenter, this, screenLockCallback, CFSTR("com.apple.screenIsLocked"), NULL,
+      CFNotificationSuspensionBehaviorDeliverImmediately
+  );
+  CFNotificationCenterAddObserver(
+      darwinCenter, this, screenLockCallback, CFSTR("com.apple.screenIsUnlocked"), NULL,
+      CFNotificationSuspensionBehaviorDeliverImmediately
+  );
+
   // thread is ready
   {
     Lock lock(m_pmMutex);
@@ -1574,6 +1588,10 @@ void OSXScreen::watchSystemPowerThread(void *)
   LOG((CLOG_DEBUG "carbon loop has stopped"));
 
   // cleanup
+  CFNotificationCenterRef darwinCenter = CFNotificationCenterGetDarwinNotifyCenter();
+  CFNotificationCenterRemoveObserver(darwinCenter, this, CFSTR("com.apple.screenIsLocked"), NULL);
+  CFNotificationCenterRemoveObserver(darwinCenter, this, CFSTR("com.apple.screenIsUnlocked"), NULL);
+
   if (notificationPortRef) {
     CFRunLoopRemoveSource(m_pmRunloop, runloopSourceRef, kCFRunLoopDefaultMode);
     CFRunLoopSourceInvalidate(runloopSourceRef);
@@ -1632,6 +1650,44 @@ void OSXScreen::handleConfirmSleep(const Event &event, void *)
       IOAllowPowerChange(m_pmRootPort, messageArg);
     }
   }
+}
+
+void OSXScreen::screenLockCallback(
+    CFNotificationCenterRef center, void *observer, CFNotificationName name, const void *object,
+    CFDictionaryRef userInfo
+)
+{
+  OSXScreen *screen = static_cast<OSXScreen *>(observer);
+  CFStringRef lockName = CFSTR("com.apple.screenIsLocked");
+  bool locked = (CFStringCompare(name, lockName, 0) == kCFCompareEqualTo);
+  screen->handleScreenLockChange(locked);
+}
+
+void OSXScreen::handleScreenLockChange(bool locked)
+{
+  Lock lock(m_pmMutex);
+  if (locked) {
+    LOG((CLOG_DEBUG "screen locked"));
+    if (!m_remoteLockPending) {
+      m_screenLocked = true;
+      m_events->addEvent(Event(m_events->forIScreen().screenLocked(), getEventTarget()));
+    }
+    m_remoteLockPending = false;
+  } else {
+    LOG((CLOG_DEBUG "screen unlocked"));
+    m_screenLocked = false;
+    m_events->addEvent(Event(m_events->forIScreen().screenUnlocked(), getEventTarget()));
+  }
+}
+
+void OSXScreen::lockScreen()
+{
+  LOG((CLOG_DEBUG "locking screen"));
+  {
+    Lock lock(m_pmMutex);
+    m_remoteLockPending = true;
+  }
+  system("/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend");
 }
 
 #pragma mark -

@@ -135,6 +135,7 @@ REGISTER_EVENT(Server, switchInDirection)
 REGISTER_EVENT(Server, keyboardBroadcast)
 REGISTER_EVENT(Server, lockCursorToScreen)
 REGISTER_EVENT(Server, screenSwitched)
+REGISTER_EVENT(Server, lockAllScreens)
 
 //
 // ServerApp
@@ -176,6 +177,8 @@ REGISTER_EVENT(IScreen, error)
 REGISTER_EVENT(IScreen, shapeChanged)
 REGISTER_EVENT(IScreen, suspend)
 REGISTER_EVENT(IScreen, resume)
+REGISTER_EVENT(IScreen, screenLocked)
+REGISTER_EVENT(IScreen, screenUnlocked)
 
 //
 // IpcServer

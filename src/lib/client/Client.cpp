@@ -328,6 +328,19 @@ void Client::screensaver(bool activate)
   m_screen->screensaver(activate);
 }
 
+void Client::screenLock(bool lock, const String &origin)
+{
+  if (origin == m_name) {
+    LOG((CLOG_DEBUG "ignoring screen lock from self"));
+    return;
+  }
+
+  if (lock) {
+    LOG((CLOG_DEBUG "locking screen from %s", origin.c_str()));
+    m_screen->lockScreen();
+  }
+}
+
 void Client::resetOptions()
 {
   m_screen->resetOptions();

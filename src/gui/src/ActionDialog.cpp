@@ -52,6 +52,8 @@ ActionDialog::ActionDialog(QWidget *parent, ServerConfig &config, Hotkey &hotkey
   for (unsigned int i = 0; i < sizeof(typeButtons) / sizeof(typeButtons[0]); i++)
     m_pButtonGroupType->addButton(typeButtons[i], i);
 
+  m_pButtonGroupType->addButton(m_pRadioLockAllScreens, Action::lockAllScreens);
+
   m_pKeySequenceWidgetHotkey->setText(m_Action.keySequence().toString());
   m_pKeySequenceWidgetHotkey->setKeySequence(m_Action.keySequence());
   m_pButtonGroupType->button(m_Action.type())->setChecked(true);

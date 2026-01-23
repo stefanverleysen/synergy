@@ -48,6 +48,7 @@ public:
     mouseDown,
     mouseUp,
     mousebutton,
+    lockAllScreens,
   };
   enum SwitchDirection
   {

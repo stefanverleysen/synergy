@@ -255,6 +255,17 @@
         </item>
        </layout>
       </item>
+      <item>
+       <layout class="QHBoxLayout">
+        <item>
+         <widget class="QRadioButton" name="m_pRadioLockAllScreens">
+          <property name="text">
+           <string>Lock all screens</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
     </widget>
    </item>
@@ -627,6 +638,38 @@
     <hint type="destinationlabel">
      <x>185</x>
      <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pRadioLockAllScreens</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pKeySequenceWidgetHotkey</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>101</x>
+     <y>380</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>68</x>
+     <y>126</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pRadioLockAllScreens</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pGroupBoxScreens</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>48</x>
+     <y>380</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>79</x>
+     <y>234</y>
     </hint>
    </hints>
   </connection>

@@ -19,6 +19,7 @@
 #include "platform/XWindowsScreen.h"
 
 #include "arch/Arch.h"
+#include "arch/unix/ArchSystemUnix.h"
 #include "arch/XArch.h"
 #include "base/IEventQueue.h"
 #include "base/Log.h"
@@ -440,6 +441,15 @@ void XWindowsScreen::screensaver(bool activate)
     m_screensaver->activate();
   } else {
     m_screensaver->deactivate();
+  }
+}
+
+void XWindowsScreen::lockScreen()
+{
+  LOG((CLOG_DEBUG "locking screen"));
+  std::string error;
+  if (!ArchSystemUnix::DBusLockScreen(error)) {
+    LOG((CLOG_WARN "failed to lock screen: %s", error.c_str()));
   }
 }
 

@@ -798,6 +798,13 @@
               </property>
              </widget>
             </item>
+            <item row="7" column="0">
+             <widget class="QCheckBox" name="m_pCheckBoxLockAllScreens">
+              <property name="text">
+               <string>Lock all screens when one locks</string>
+              </property>
+             </widget>
+            </item>
             <item row="3" column="0">
              <widget class="QCheckBox" name="m_pCheckBoxWin32KeepForeground">
               <property name="enabled">

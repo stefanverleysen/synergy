@@ -352,10 +352,13 @@ private:
   void handleSwitchInDirectionEvent(const Event &, void *);
   void handleKeyboardBroadcastEvent(const Event &, void *);
   void handleLockCursorToScreenEvent(const Event &, void *);
+  void handleLockAllScreensEvent(const Event &, void *);
   void handleFakeInputBeginEvent(const Event &, void *);
   void handleFakeInputEndEvent(const Event &, void *);
   void handleFileChunkSendingEvent(const Event &, void *);
   void handleFileRecieveCompletedEvent(const Event &, void *);
+  void handleScreenLockedEvent(const Event &, void *);
+  void handleScreenUnlockedEvent(const Event &, void *);
 
   // event processing
   void onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum);
@@ -516,6 +519,7 @@ private:
   bool m_disableLockToScreen;
   bool m_enableClipboard;
   size_t m_maximumClipboardSize;
+  bool m_lockAllScreens;
 
   AutoThread m_sendDragInfoThread;
   bool m_waitDragInfoThread;

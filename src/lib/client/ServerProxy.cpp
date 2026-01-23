@@ -296,6 +296,10 @@ ServerProxy::EResult ServerProxy::parseMessage(const UInt8 *code)
     screensaver();
   }
 
+  else if (memcmp(code, kMsgDScreenLock, 4) == 0) {
+    screenLock();
+  }
+
   else if (memcmp(code, kMsgQInfo, 4) == 0) {
     queryInfo();
   }
@@ -750,6 +754,18 @@ void ServerProxy::screensaver()
 
   // forward
   m_client->screensaver(on != 0);
+}
+
+void ServerProxy::screenLock()
+{
+  // parse
+  SInt8 lock;
+  String origin;
+  ProtocolUtil::readf(m_stream, kMsgDScreenLock + 4, &lock, &origin);
+  LOG((CLOG_DEBUG1 "recv screen lock lock=%d origin=%s", lock, origin.c_str()));
+
+  // forward
+  m_client->screenLock(lock != 0, origin);
 }
 
 void ServerProxy::resetOptions()

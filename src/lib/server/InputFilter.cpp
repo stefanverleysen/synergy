@@ -311,6 +311,25 @@ void InputFilter::RestartServer::perform(const Event &event)
   exit(0);
 }
 
+InputFilter::LockAllScreensAction::LockAllScreensAction(IEventQueue *events) : m_events(events)
+{
+}
+
+InputFilter::Action *InputFilter::LockAllScreensAction::clone() const
+{
+  return new LockAllScreensAction(*this);
+}
+
+String InputFilter::LockAllScreensAction::format() const
+{
+  return "lockAllScreens()";
+}
+
+void InputFilter::LockAllScreensAction::perform(const Event &event)
+{
+  m_events->addEvent(Event(m_events->forServer().lockAllScreens(), event.getTarget(), NULL, Event::kDeliverImmediately));
+}
+
 InputFilter::SwitchToScreenAction::SwitchToScreenAction(IEventQueue *events, const String &screen)
     : m_screen(screen),
       m_events(events)

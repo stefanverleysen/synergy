@@ -459,7 +459,8 @@ public:
         m_switchInDirection(Event::kUnknown),
         m_keyboardBroadcast(Event::kUnknown),
         m_lockCursorToScreen(Event::kUnknown),
-        m_screenSwitched(Event::kUnknown)
+        m_screenSwitched(Event::kUnknown),
+        m_lockAllScreens(Event::kUnknown)
   {
   }
 
@@ -527,6 +528,13 @@ public:
   */
   Event::Type screenSwitched();
 
+  //! Get lock all screens event type
+  /*!
+  Returns the lock all screens event type.  The server responds to this
+  by locking all connected screens.
+  */
+  Event::Type lockAllScreens();
+
   //@}
 
 private:
@@ -538,6 +546,7 @@ private:
   Event::Type m_keyboardBroadcast;
   Event::Type m_lockCursorToScreen;
   Event::Type m_screenSwitched;
+  Event::Type m_lockAllScreens;
 };
 
 class ServerAppEvents : public EventTypes
@@ -673,7 +682,9 @@ public:
       : m_error(Event::kUnknown),
         m_shapeChanged(Event::kUnknown),
         m_suspend(Event::kUnknown),
-        m_resume(Event::kUnknown)
+        m_resume(Event::kUnknown),
+        m_screenLocked(Event::kUnknown),
+        m_screenUnlocked(Event::kUnknown)
   {
   }
 
@@ -708,6 +719,20 @@ public:
   */
   Event::Type resume();
 
+  //! Get screen locked event type
+  /*!
+  Returns the screen locked event type. This is sent whenever the
+  screen is locked by the user or system.
+  */
+  Event::Type screenLocked();
+
+  //! Get screen unlocked event type
+  /*!
+  Returns the screen unlocked event type. This is sent whenever the
+  screen is unlocked.
+  */
+  Event::Type screenUnlocked();
+
   //@}
 
 private:
@@ -715,6 +740,8 @@ private:
   Event::Type m_shapeChanged;
   Event::Type m_suspend;
   Event::Type m_resume;
+  Event::Type m_screenLocked;
+  Event::Type m_screenUnlocked;
 };
 
 class ClipboardEvents : public EventTypes

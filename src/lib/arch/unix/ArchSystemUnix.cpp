@@ -185,4 +185,46 @@ bool ArchSystemUnix::DBusInhibitScreenCall(InhibitScreenServices serviceID, bool
 
   return true;
 }
+
+bool ArchSystemUnix::DBusLockScreen(std::string &error)
+{
+  error = "";
+
+  QDBusConnection bus = QDBusConnection::sessionBus();
+  if (!bus.isConnected()) {
+    error = "session bus failed to connect";
+    return false;
+  }
+
+  // Try org.freedesktop.ScreenSaver first
+  QDBusInterface screenSaverInterface(
+      "org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver", "org.freedesktop.ScreenSaver", bus
+  );
+
+  if (screenSaverInterface.isValid()) {
+    QDBusReply<void> reply = screenSaverInterface.call("Lock");
+    if (reply.isValid()) {
+      return true;
+    }
+  }
+
+  // Try org.gnome.ScreenSaver
+  QDBusInterface gnomeInterface("org.gnome.ScreenSaver", "/org/gnome/ScreenSaver", "org.gnome.ScreenSaver", bus);
+
+  if (gnomeInterface.isValid()) {
+    QDBusReply<void> reply = gnomeInterface.call("Lock");
+    if (reply.isValid()) {
+      return true;
+    }
+  }
+
+  // Fallback to loginctl
+  int result = system("loginctl lock-session");
+  if (result == 0) {
+    return true;
+  }
+
+  error = "failed to lock screen via D-Bus or loginctl";
+  return false;
+}
 #endif

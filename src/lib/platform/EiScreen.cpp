@@ -19,6 +19,7 @@
 #include "platform/EiScreen.h"
 
 #include "arch/Arch.h"
+#include "arch/unix/ArchSystemUnix.h"
 #include "arch/XArch.h"
 #include "base/IEventQueue.h"
 #include "base/Log.h"
@@ -429,6 +430,15 @@ void EiScreen::closeScreensaver()
 void EiScreen::screensaver(bool activate)
 {
   // FIXME
+}
+
+void EiScreen::lockScreen()
+{
+  LOG((CLOG_DEBUG "locking screen"));
+  std::string error;
+  if (!ArchSystemUnix::DBusLockScreen(error)) {
+    LOG((CLOG_WARN "failed to lock screen: %s", error.c_str()));
+  }
 }
 
 void EiScreen::resetOptions()

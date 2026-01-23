@@ -218,6 +218,11 @@ void PrimaryClient::screensaver(bool)
   // ignore
 }
 
+void PrimaryClient::screenLock(bool, const String &)
+{
+  // ignore - primary screen handles its own lock
+}
+
 void PrimaryClient::sendDragInfo(UInt32 fileCount, const char *info, size_t size)
 {
   // ignore

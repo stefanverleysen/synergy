@@ -128,6 +128,7 @@ public:
   virtual void openScreensaver(bool notify);
   virtual void closeScreensaver();
   virtual void screensaver(bool activate);
+  virtual void lockScreen();
   virtual void resetOptions();
   virtual void setOptions(const OptionsList &options);
   virtual void setSequenceNumber(UInt32);
@@ -312,6 +313,10 @@ private:
   MSWindowsScreenSaver *m_screensaver;
   bool m_screensaverNotify;
   bool m_screensaverActive;
+
+  // screen lock stuff
+  bool m_screenLocked;
+  bool m_remoteLockPending;
 
   // clipboard stuff.  our window is used mainly as a clipboard
   // owner and as a link in the clipboard viewer chain.

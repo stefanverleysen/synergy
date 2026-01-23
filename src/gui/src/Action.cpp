@@ -22,8 +22,8 @@
 #include <QTextStream>
 
 const char *Action::m_ActionTypeNames[] = {
-    "keyDown",       "keyUp",     "keystroke", "switchToScreen", "switchInDirection", "lockCursorToScreen",
-    "restartServer", "mouseDown", "mouseUp",   "mousebutton"
+    "keyDown",       "keyUp",     "keystroke",   "switchToScreen", "switchInDirection", "lockCursorToScreen",
+    "restartServer", "mouseDown", "mouseUp",     "mousebutton",    "lockAllScreens"
 };
 
 const char *Action::m_SwitchDirectionNames[] = {"left", "right", "up", "down"};
@@ -80,6 +80,9 @@ QString Action::text() const
 
   case restartAllConnections:
     text += "restart";
+    break;
+
+  case lockAllScreens:
     break;
   default:
     Q_ASSERT(0);

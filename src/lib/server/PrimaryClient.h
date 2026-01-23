@@ -141,6 +141,7 @@ public:
   void mouseRelativeMove(SInt32 xRel, SInt32 yRel) override;
   void mouseWheel(SInt32 xDelta, SInt32 yDelta) override;
   void screensaver(bool activate) override;
+  void screenLock(bool lock, const String &origin) override;
   void resetOptions() override;
   void setOptions(const OptionsList &options) override;
   void sendDragInfo(UInt32 fileCount, const char *info, size_t size) override;

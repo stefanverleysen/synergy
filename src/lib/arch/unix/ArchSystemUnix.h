@@ -44,5 +44,6 @@ public:
     kSessionManager
   };
   static bool DBusInhibitScreenCall(InhibitScreenServices serviceID, bool state, std::string &error);
+  static bool DBusLockScreen(std::string &error);
 #endif
 };
