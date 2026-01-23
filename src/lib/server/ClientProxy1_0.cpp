@@ -351,6 +351,12 @@ void ClientProxy1_0::screenLock(bool lock, const String &origin)
   ProtocolUtil::writef(getStream(), kMsgDScreenLock, lock ? 1 : 0, &origin);
 }
 
+void ClientProxy1_0::screenWake()
+{
+  LOG((CLOG_DEBUG1 "send screen wake to \"%s\"", getName().c_str()));
+  ProtocolUtil::writef(getStream(), kMsgDScreenWake);
+}
+
 void ClientProxy1_0::resetOptions()
 {
   LOG((CLOG_DEBUG1 "send reset options to \"%s\"", getName().c_str()));

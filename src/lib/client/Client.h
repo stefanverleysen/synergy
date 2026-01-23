@@ -190,6 +190,7 @@ public:
   virtual void mouseWheel(SInt32 xDelta, SInt32 yDelta);
   virtual void screensaver(bool activate);
   void screenLock(bool lock, const String &origin);
+  void screenWake();
   virtual void resetOptions();
   virtual void setOptions(const OptionsList &options);
   virtual String getName() const;

@@ -118,6 +118,7 @@ private:
   void mouseWheel();
   void screensaver();
   void screenLock();
+  void screenWake();
   void resetOptions();
   void setOptions();
   void queryInfo();

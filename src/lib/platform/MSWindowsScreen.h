@@ -129,6 +129,7 @@ public:
   virtual void closeScreensaver();
   virtual void screensaver(bool activate);
   virtual void lockScreen();
+  virtual void wakeScreen();
   virtual void resetOptions();
   virtual void setOptions(const OptionsList &options);
   virtual void setSequenceNumber(UInt32);

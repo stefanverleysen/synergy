@@ -498,4 +498,9 @@ void Screen::lockScreen()
   m_screen->lockScreen();
 }
 
+void Screen::wakeScreen()
+{
+  m_screen->wakeScreen();
+}
+
 } // namespace deskflow

@@ -341,6 +341,12 @@ void Client::screenLock(bool lock, const String &origin)
   }
 }
 
+void Client::screenWake()
+{
+  LOG((CLOG_DEBUG "waking screen"));
+  m_screen->wakeScreen();
+}
+
 void Client::resetOptions()
 {
   m_screen->resetOptions();

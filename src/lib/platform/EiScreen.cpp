@@ -441,6 +441,15 @@ void EiScreen::lockScreen()
   }
 }
 
+void EiScreen::wakeScreen()
+{
+  LOG((CLOG_DEBUG "waking display"));
+  // Use power manager to simulate user activity and wake the screen
+  if (m_powerManager) {
+    m_powerManager->simulateUserActivity();
+  }
+}
+
 void EiScreen::resetOptions()
 {
   // Should reset options to neutral, see setOptions().

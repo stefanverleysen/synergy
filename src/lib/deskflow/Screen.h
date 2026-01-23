@@ -249,6 +249,12 @@ public:
   */
   void lockScreen();
 
+  //! Wake the screen
+  /*!
+  Wakes up the display from sleep/idle state.
+  */
+  void wakeScreen();
+
   //@}
   //! @name accessors
   //@{

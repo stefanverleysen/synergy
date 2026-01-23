@@ -453,6 +453,14 @@ void XWindowsScreen::lockScreen()
   }
 }
 
+void XWindowsScreen::wakeScreen()
+{
+  LOG((CLOG_DEBUG "waking display"));
+  // Reset the screensaver to wake the display
+  XResetScreenSaver(m_display);
+  XFlush(m_display);
+}
+
 void XWindowsScreen::resetOptions()
 {
   m_xtestIsXineramaUnaware = true;

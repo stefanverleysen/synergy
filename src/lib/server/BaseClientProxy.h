@@ -87,6 +87,7 @@ public:
   virtual void mouseWheel(SInt32 xDelta, SInt32 yDelta) = 0;
   virtual void screensaver(bool activate) = 0;
   virtual void screenLock(bool lock, const String &origin) = 0;
+  virtual void screenWake() = 0;
   virtual void resetOptions() = 0;
   virtual void setOptions(const OptionsList &options) = 0;
   virtual void sendDragInfo(UInt32 fileCount, const char *info, size_t size) = 0;

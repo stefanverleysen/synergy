@@ -1689,6 +1689,15 @@ void OSXScreen::lockScreen()
   system("/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend");
 }
 
+void OSXScreen::wakeScreen()
+{
+  LOG((CLOG_DEBUG "waking display"));
+  // Use caffeinate to wake the display - this is the most reliable method
+  // The -u flag simulates user activity to wake the display
+  // The -t 1 flag makes it run for only 1 second
+  system("caffeinate -u -t 1 &");
+}
+
 #pragma mark -
 
 //

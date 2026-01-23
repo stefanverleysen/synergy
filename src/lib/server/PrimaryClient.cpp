@@ -223,6 +223,11 @@ void PrimaryClient::screenLock(bool, const String &)
   // ignore - primary screen handles its own lock
 }
 
+void PrimaryClient::screenWake()
+{
+  // ignore - primary screen handles its own wake
+}
+
 void PrimaryClient::sendDragInfo(UInt32 fileCount, const char *info, size_t size)
 {
   // ignore

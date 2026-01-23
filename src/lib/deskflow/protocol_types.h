@@ -298,6 +298,10 @@ extern const char *const kMsgDLanguageSynchronisation;
 // $1 = lock state (1 = locked, 0 = unlocked), $2 = originating screen name
 extern const char *const kMsgDScreenLock;
 
+// screen wake:  primary -> secondary
+// wake up the display from sleep/idle state
+extern const char *const kMsgDScreenWake;
+
 //
 // query codes
 //

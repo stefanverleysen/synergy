@@ -480,6 +480,15 @@ void MSWindowsScreen::lockScreen()
   LockWorkStation();
 }
 
+void MSWindowsScreen::wakeScreen()
+{
+  LOG((CLOG_DEBUG "waking display"));
+  // Wake up the display by requesting it to stay on momentarily
+  SetThreadExecutionState(ES_DISPLAY_REQUIRED);
+  // Also simulate a mouse move to ensure wake
+  mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, 0);
+}
+
 void MSWindowsScreen::resetOptions()
 {
   m_desks->resetOptions();

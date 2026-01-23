@@ -300,6 +300,10 @@ ServerProxy::EResult ServerProxy::parseMessage(const UInt8 *code)
     screenLock();
   }
 
+  else if (memcmp(code, kMsgDScreenWake, 4) == 0) {
+    screenWake();
+  }
+
   else if (memcmp(code, kMsgQInfo, 4) == 0) {
     queryInfo();
   }
@@ -766,6 +770,13 @@ void ServerProxy::screenLock()
 
   // forward
   m_client->screenLock(lock != 0, origin);
+}
+
+void ServerProxy::screenWake()
+{
+  LOG((CLOG_DEBUG1 "recv screen wake"));
+  // forward
+  m_client->screenWake();
 }
 
 void ServerProxy::resetOptions()

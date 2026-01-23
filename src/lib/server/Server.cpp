@@ -1476,7 +1476,15 @@ void Server::handleScreenLockedEvent(const Event &event, void *)
 
 void Server::handleScreenUnlockedEvent(const Event &event, void *)
 {
-  LOG((CLOG_DEBUG "primary screen unlocked"));
+  LOG((CLOG_DEBUG "primary screen unlocked, waking all clients"));
+
+  // Wake all connected clients
+  for (auto &entry : m_clients) {
+    BaseClientProxy *client = entry.second;
+    if (client != m_primaryClient) {
+      client->screenWake();
+    }
+  }
 }
 
 void Server::onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum)

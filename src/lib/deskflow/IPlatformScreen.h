@@ -125,6 +125,13 @@ public:
   */
   virtual void lockScreen() = 0;
 
+  //! Wake the screen
+  /*!
+  Wake up the display from sleep/idle state. Brings up the lock screen
+  if the system is locked, or activates the display if sleeping.
+  */
+  virtual void wakeScreen() = 0;
+
   //! Notify of options changes
   /*!
   Reset all options to their default values.
