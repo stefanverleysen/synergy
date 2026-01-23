@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(cmake --list-presets:*)",
+      "Bash(g++:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git reset:*)",
+      "Bash(git stash:*)",
+      "Bash(git -C \"C:\\Users\\NAS\\projects\\synergy\" show --stat 727af604)",
+      "Bash(git config:*)",
+      "Bash(grep:*)",
+      "Bash(cmake --preset:*)",
+      "Bash(echo:*)",
+      "Bash(cmake:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(where vcpkg:*)"
+    ]
+  }
+}
