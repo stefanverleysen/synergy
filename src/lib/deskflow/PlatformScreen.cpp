@@ -185,20 +185,33 @@ void PlatformScreen::runScript(const String &name, const String &content)
   String scriptPath = dir + name + ".sh";
 #endif
 
-  // Write content to script file
-  std::ofstream file(scriptPath, std::ios::binary);
-  if (!file) {
-    LOG((CLOG_ERR "failed to write script to %s", scriptPath.c_str()));
-    return;
+  // Check if script file exists with same content (skip rewrite for speed)
+  bool needsWrite = true;
+  std::ifstream existingFile(scriptPath, std::ios::binary);
+  if (existingFile) {
+    std::string existingContent((std::istreambuf_iterator<char>(existingFile)), std::istreambuf_iterator<char>());
+    existingFile.close();
+    if (existingContent == content) {
+      needsWrite = false;
+    }
   }
-  file << content;
-  file.close();
+
+  if (needsWrite) {
+    std::ofstream file(scriptPath, std::ios::binary);
+    if (!file) {
+      LOG((CLOG_ERR "failed to write script to %s", scriptPath.c_str()));
+      return;
+    }
+    file << content;
+    file.close();
 
 #if !WINAPI_MSWINDOWS
-  chmod(scriptPath.c_str(), 0755);
+    chmod(scriptPath.c_str(), 0755);
 #endif
+    LOG((CLOG_DEBUG "wrote script \"%s\" to %s", name.c_str(), scriptPath.c_str()));
+  }
 
-  LOG((CLOG_DEBUG "running script \"%s\" from %s", name.c_str(), scriptPath.c_str()));
+  LOG((CLOG_DEBUG "running script \"%s\"", name.c_str()));
 
   // Execute the script
 #if WINAPI_MSWINDOWS
