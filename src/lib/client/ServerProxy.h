@@ -128,7 +128,6 @@ private:
   void setServerLanguages();
   void setActiveServerLanguage(const String &language);
   void checkMissedLanguages() const;
-  void syncScript();
   void runScript();
 
 private:

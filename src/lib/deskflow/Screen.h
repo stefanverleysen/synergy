@@ -243,11 +243,8 @@ public:
   */
   String getSecureInputApp() const;
 
-  //! Cache a script to local disk
-  void cacheScript(const String &name, const String &content);
-
-  //! Execute a cached script
-  void runScript(const String &name);
+  //! Execute a script with the given content
+  void runScript(const String &name, const String &content);
 
   //@}
   //! @name accessors

@@ -26,8 +26,9 @@ public:
   ~ClientProxy1_8() override = default;
 
   void keyDown(KeyID, KeyModifierMask, KeyButton, const String &) override;
-  void syncScript(const String &name, const String &content) override;
-  void runScript(const String &name) override;
+  void runScript(
+      const String &name, const String &winContent, const String &macContent, const String &linuxContent
+  ) override;
 
 private:
   void synchronizeLanguages() const;

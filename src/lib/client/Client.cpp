@@ -834,12 +834,7 @@ void Client::sendDragInfo(UInt32 fileCount, String &info, size_t size)
   m_server->sendDragInfo(fileCount, info.c_str(), size);
 }
 
-void Client::cacheScript(const String &name, const String &content)
+void Client::executeScript(const String &name, const String &content)
 {
-  m_screen->cacheScript(name, content);
-}
-
-void Client::executeScript(const String &name)
-{
-  m_screen->runScript(name);
+  m_screen->runScript(name, content);
 }

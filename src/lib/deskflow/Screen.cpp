@@ -493,14 +493,9 @@ String Screen::getSecureInputApp() const
   return m_screen->getSecureInputApp();
 }
 
-void Screen::cacheScript(const String &name, const String &content)
+void Screen::runScript(const String &name, const String &content)
 {
-  m_screen->cacheScript(name, content);
-}
-
-void Screen::runScript(const String &name)
-{
-  m_screen->runScript(name);
+  m_screen->runScript(name, content);
 }
 
 } // namespace deskflow

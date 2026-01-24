@@ -64,8 +64,9 @@ public:
   void fileChunkSending(UInt8 mark, char *data, size_t dataSize) override;
   String getSecureInputApp() const override;
   void secureInputNotification(const String &app) const override;
-  void syncScript(const String &name, const String &content) override;
-  void runScript(const String &name) override;
+  void runScript(
+      const String &name, const String &winContent, const String &macContent, const String &linuxContent
+  ) override;
 
 protected:
   virtual bool parseHandshakeMessage(const UInt8 *code);

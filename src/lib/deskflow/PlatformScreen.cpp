@@ -164,8 +164,13 @@ static void ensureDirectory(const String &path)
 #endif
 }
 
-void PlatformScreen::cacheScript(const String &name, const String &content)
+void PlatformScreen::runScript(const String &name, const String &content)
 {
+  if (content.empty()) {
+    LOG((CLOG_DEBUG "script \"%s\" has no content for this platform, skipping", name.c_str()));
+    return;
+  }
+
   String dir = getScriptDir();
   if (dir.empty()) {
     LOG((CLOG_ERR "could not determine script directory"));
@@ -180,12 +185,12 @@ void PlatformScreen::cacheScript(const String &name, const String &content)
   String scriptPath = dir + name + ".sh";
 #endif
 
+  // Write content to script file
   std::ofstream file(scriptPath, std::ios::binary);
   if (!file) {
     LOG((CLOG_ERR "failed to write script to %s", scriptPath.c_str()));
     return;
   }
-
   file << content;
   file.close();
 
@@ -193,19 +198,10 @@ void PlatformScreen::cacheScript(const String &name, const String &content)
   chmod(scriptPath.c_str(), 0755);
 #endif
 
-  LOG((CLOG_DEBUG "cached script \"%s\" to %s", name.c_str(), scriptPath.c_str()));
-}
+  LOG((CLOG_DEBUG "running script \"%s\" from %s", name.c_str(), scriptPath.c_str()));
 
-void PlatformScreen::runScript(const String &name)
-{
-  String dir = getScriptDir();
-  if (dir.empty()) {
-    LOG((CLOG_ERR "could not determine script directory"));
-    return;
-  }
-
+  // Execute the script
 #if WINAPI_MSWINDOWS
-  String scriptPath = dir + name + ".ps1";
   String command = "powershell.exe -ExecutionPolicy Bypass -File \"" + scriptPath + "\"";
 
   STARTUPINFOA si;
@@ -222,8 +218,6 @@ void PlatformScreen::runScript(const String &name)
     LOG((CLOG_ERR "failed to run script \"%s\": error %lu", name.c_str(), GetLastError()));
   }
 #else
-  String scriptPath = dir + name + ".sh";
-
   pid_t pid = fork();
   if (pid == 0) {
     execl("/bin/sh", "sh", scriptPath.c_str(), nullptr);

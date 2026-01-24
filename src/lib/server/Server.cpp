@@ -172,9 +172,6 @@ Server::Server(
       m_events->forServer().runScript(), m_inputFilter, new TMethodEventJob<Server>(this, &Server::handleRunScriptEvent)
   );
   m_events->adoptHandler(
-      m_events->forServer().syncScripts(), this, new TMethodEventJob<Server>(this, &Server::handleSyncScriptsEvent)
-  );
-  m_events->adoptHandler(
       m_events->forIPrimaryScreen().fakeInputBegin(), m_inputFilter,
       new TMethodEventJob<Server>(this, &Server::handleFakeInputBeginEvent)
   );
@@ -325,16 +322,6 @@ void Server::adoptClient(BaseClientProxy *client)
 
   // send configuration options to client
   sendOptions(client);
-
-  // sync scripts to client
-  const auto &scripts = m_config->getScripts();
-  if (!scripts.empty()) {
-    LOG((CLOG_INFO "syncing %d scripts to client \"%s\"", scripts.size(), getName(client).c_str()));
-    for (const auto &script : scripts) {
-      client->syncScript(script.first, script.second);
-      LOG((CLOG_NOTE "synced script \"%s\" to client \"%s\"", script.first.c_str(), getName(client).c_str()));
-    }
-  }
 
   // activate screen saver on new client if active on the primary screen
   if (m_activeSaver != NULL) {
@@ -1442,6 +1429,7 @@ void Server::handleRunScriptEvent(const Event &event, void *)
 {
   RunScriptInfo *info = static_cast<RunScriptInfo *>(event.getData());
   const auto &screenScripts = info->m_screenScripts;
+  const auto &scripts = m_config->getScripts();
 
   for (const auto &clientPair : m_clients) {
     const String &clientName = clientPair.first;
@@ -1459,33 +1447,21 @@ void Server::handleRunScriptEvent(const Event &event, void *)
     }
 
     if (!scriptName.empty()) {
+      // Look up script content for each platform
+      String winContent, macContent, linuxContent;
+      auto winIt = scripts.find(scriptName + ":windows");
+      auto macIt = scripts.find(scriptName + ":mac");
+      auto linuxIt = scripts.find(scriptName + ":linux");
+
+      if (winIt != scripts.end())
+        winContent = winIt->second;
+      if (macIt != scripts.end())
+        macContent = macIt->second;
+      if (linuxIt != scripts.end())
+        linuxContent = linuxIt->second;
+
       LOG((CLOG_DEBUG "running script \"%s\" on client \"%s\"", scriptName.c_str(), clientName.c_str()));
-      client->runScript(scriptName);
-    }
-  }
-}
-
-void Server::handleSyncScriptsEvent(const Event &event, void *)
-{
-  SyncScriptsInfo *info = static_cast<SyncScriptsInfo *>(event.getData());
-  const auto &clientScripts = info->m_clientScripts;
-
-  for (const auto &clientPair : clientScripts) {
-    const String &clientName = clientPair.first;
-    const auto &scripts = clientPair.second;
-
-    auto clientIt = m_clients.find(clientName);
-    if (clientIt == m_clients.end()) {
-      LOG((CLOG_DEBUG "client \"%s\" not connected, skipping sync", clientName.c_str()));
-      continue;
-    }
-
-    BaseClientProxy *client = clientIt->second;
-    for (const auto &scriptPair : scripts) {
-      const String &scriptName = scriptPair.first;
-      const String &scriptContent = scriptPair.second;
-      LOG((CLOG_DEBUG "syncing script \"%s\" to client \"%s\"", scriptName.c_str(), clientName.c_str()));
-      client->syncScript(scriptName, scriptContent);
+      client->runScript(scriptName, winContent, macContent, linuxContent);
     }
   }
 }
@@ -2286,17 +2262,6 @@ Server::RunScriptInfo *Server::RunScriptInfo::alloc(const std::map<String, Strin
 {
   RunScriptInfo *info = new RunScriptInfo();
   info->m_screenScripts = screenScripts;
-  return info;
-}
-
-//
-// Server::SyncScriptsInfo
-//
-
-Server::SyncScriptsInfo *Server::SyncScriptsInfo::alloc(const std::map<String, std::map<String, String>> &clientScripts)
-{
-  SyncScriptsInfo *info = new SyncScriptsInfo();
-  info->m_clientScripts = clientScripts;
   return info;
 }
 

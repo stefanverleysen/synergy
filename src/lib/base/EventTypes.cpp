@@ -136,7 +136,6 @@ REGISTER_EVENT(Server, keyboardBroadcast)
 REGISTER_EVENT(Server, lockCursorToScreen)
 REGISTER_EVENT(Server, screenSwitched)
 REGISTER_EVENT(Server, runScript)
-REGISTER_EVENT(Server, syncScripts)
 
 //
 // ServerApp

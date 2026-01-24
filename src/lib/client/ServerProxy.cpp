@@ -322,8 +322,6 @@ ServerProxy::EResult ServerProxy::parseMessage(const UInt8 *code)
     dragInfoReceived();
   } else if (memcmp(code, kMsgDSecureInputNotification, 4) == 0) {
     secureInputNotification();
-  } else if (memcmp(code, kMsgDSyncScript, 4) == 0) {
-    syncScript();
   } else if (memcmp(code, kMsgDRunScript, 4) == 0) {
     runScript();
   }
@@ -921,19 +919,24 @@ void ServerProxy::checkMissedLanguages() const
   }
 }
 
-void ServerProxy::syncScript()
-{
-  String name;
-  String content;
-  ProtocolUtil::readf(m_stream, kMsgDSyncScript + 4, &name, &content);
-  LOG((CLOG_DEBUG "recv sync script \"%s\"", name.c_str()));
-  m_client->cacheScript(name, content);
-}
-
 void ServerProxy::runScript()
 {
-  String name;
-  ProtocolUtil::readf(m_stream, kMsgDRunScript + 4, &name);
+  String name, winContent, macContent, linuxContent;
+  ProtocolUtil::readf(m_stream, kMsgDRunScript + 4, &name, &winContent, &macContent, &linuxContent);
   LOG((CLOG_DEBUG "recv run script \"%s\"", name.c_str()));
-  m_client->executeScript(name);
+
+  // Pick the right content for this platform
+#if defined(_WIN32)
+  const String &content = winContent;
+#elif defined(__APPLE__)
+  const String &content = macContent;
+#else
+  const String &content = linuxContent;
+#endif
+
+  if (!content.empty()) {
+    m_client->executeScript(name, content);
+  } else {
+    LOG((CLOG_DEBUG "script \"%s\" has no content for this platform", name.c_str()));
+  }
 }
