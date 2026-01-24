@@ -957,10 +957,14 @@ void Config::readSectionScripts(ConfigReadContext &s)
     String nameAndPlatform = line.substr(0, eqPos);
     String content = line.substr(eqPos + 1);
 
-    // Trim whitespace
+    // Trim leading and trailing whitespace from key
+    while (!nameAndPlatform.empty() && (nameAndPlatform.front() == ' ' || nameAndPlatform.front() == '\t')) {
+      nameAndPlatform.erase(0, 1);
+    }
     while (!nameAndPlatform.empty() && (nameAndPlatform.back() == ' ' || nameAndPlatform.back() == '\t')) {
       nameAndPlatform.pop_back();
     }
+    // Trim leading whitespace from content
     while (!content.empty() && (content.front() == ' ' || content.front() == '\t')) {
       content.erase(0, 1);
     }
