@@ -902,16 +902,16 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
-        <number>15</number>
+        <number>6</number>
        </property>
        <property name="leftMargin">
-        <number>120</number>
+        <number>9</number>
        </property>
        <property name="topMargin">
-        <number>30</number>
+        <number>9</number>
        </property>
        <property name="rightMargin">
-        <number>120</number>
+        <number>9</number>
        </property>
        <item alignment="Qt::AlignHCenter">
         <widget class="QLabel" name="label_5">
@@ -1162,17 +1162,26 @@ Enabling this setting will disable the server config GUI.</string>
         </layout>
        </item>
        <item>
-        <spacer name="verticalSpacer_1">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+        <widget class="QLabel" name="m_pLabelConfigPreview">
+         <property name="text">
+          <string>Configuration Preview</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="m_pTextConfigPreview">
+         <property name="readOnly">
+          <bool>true</bool>
          </property>
-        </spacer>
+         <property name="lineWrapMode">
+          <enum>QPlainTextEdit::NoWrap</enum>
+         </property>
+         <property name="font">
+          <font>
+           <family>monospace</family>
+          </font>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

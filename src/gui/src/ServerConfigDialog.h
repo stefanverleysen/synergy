@@ -84,6 +84,8 @@ protected:
   }
 
 private:
+  void refreshConfigPreview();
+
   ServerConfig &m_OriginalServerConfig;
   ServerConfig m_ServerConfig;
   bool m_OriginalServerConfigIsExternal;

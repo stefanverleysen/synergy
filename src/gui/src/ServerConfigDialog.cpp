@@ -259,6 +259,10 @@ ServerConfigDialog::ServerConfigDialog(QWidget *parent, ServerConfig &config, Ap
     serverConfig().setConfigFile(m_pEditConfigFile->text());
     onChange();
   });
+
+  connect(m_pCheckBoxUseExternalConfig, &QCheckBox::toggled, this, &ServerConfigDialog::refreshConfigPreview);
+  connect(m_pEditConfigFile, &QLineEdit::textChanged, this, &ServerConfigDialog::refreshConfigPreview);
+  refreshConfigPreview();
 }
 
 bool ServerConfigDialog::addClient(const QString &clientName)
@@ -530,4 +534,21 @@ void ServerConfigDialog::onChange()
                               m_OriginalServerConfigUsesExternalFile == serverConfig().configFile();
   m_pButtonBox->button(QDialogButtonBox::Ok)
       ->setEnabled(!isAppConfigDataEqual || !(m_OriginalServerConfig == m_ServerConfig));
+}
+
+void ServerConfigDialog::refreshConfigPreview()
+{
+  if (m_pCheckBoxUseExternalConfig->isChecked()) {
+    QFile file(m_pEditConfigFile->text());
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      m_pTextConfigPreview->setPlainText(QString::fromUtf8(file.readAll()));
+    } else {
+      m_pTextConfigPreview->setPlainText(tr("(Cannot read file)"));
+    }
+  } else {
+    QString configText;
+    QTextStream stream(&configText);
+    stream << serverConfig();
+    m_pTextConfigPreview->setPlainText(configText);
+  }
 }
