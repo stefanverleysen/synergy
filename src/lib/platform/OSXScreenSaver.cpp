@@ -173,10 +173,12 @@ void getProcessSerialNumber(const char *name, ProcessSerialNumber &psn)
 
 bool isScreenSaverEngine(const ProcessSerialNumber &psn)
 {
-  CFStringRef processName;
+  CFStringRef processName = nullptr;
   OSStatus err = CopyProcessName(&psn, &processName);
-  bool result = (err == 0 && CFEqual(CFSTR("ScreenSaverEngine"), processName));
-  CFRelease(processName);
+  bool result = (err == 0 && processName != nullptr && CFEqual(CFSTR("ScreenSaverEngine"), processName));
+  if (processName != nullptr) {
+    CFRelease(processName);
+  }
 
   return result;
 }

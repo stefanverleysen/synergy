@@ -46,7 +46,8 @@ ActionDialog::ActionDialog(QWidget *parent, ServerConfig &config, Hotkey &hotkey
       m_pRadioSwitchToScreen,
       m_pRadioSwitchInDirection,
       m_pRadioLockCursorToScreen,
-      m_pRadioRestartAllConnections
+      m_pRadioRestartAllConnections,
+      m_pRadioRunScript
   };
 
   for (unsigned int i = 0; i < sizeof(typeButtons) / sizeof(typeButtons[0]); i++)
@@ -54,9 +55,22 @@ ActionDialog::ActionDialog(QWidget *parent, ServerConfig &config, Hotkey &hotkey
 
   m_pButtonGroupType->addButton(m_pRadioLockAllScreens, Action::lockAllScreens);
 
+  foreach (const Script &script, serverConfig().scripts())
+    m_pComboRunScript->addItem(script.name);
+
   m_pKeySequenceWidgetHotkey->setText(m_Action.keySequence().toString());
   m_pKeySequenceWidgetHotkey->setKeySequence(m_Action.keySequence());
-  m_pButtonGroupType->button(m_Action.type())->setChecked(true);
+
+  int buttonId = m_Action.type();
+  if (m_Action.type() == Action::runScript) {
+    buttonId = 7;
+    QString scriptName = m_Action.screenScripts().value("*");
+    int idx = m_pComboRunScript->findText(scriptName);
+    if (idx >= 0)
+      m_pComboRunScript->setCurrentIndex(idx);
+  }
+  m_pButtonGroupType->button(buttonId)->setChecked(true);
+
   m_pComboSwitchInDirection->setCurrentIndex(m_Action.switchDirection());
   m_pComboLockCursorToScreen->setCurrentIndex(m_Action.lockCursorMode());
 
@@ -88,8 +102,19 @@ void ActionDialog::accept()
   if (!sequenceWidget()->valid() && m_pButtonGroupType->checkedId() >= 0 && m_pButtonGroupType->checkedId() < 3)
     return;
 
+  int actionType = m_pButtonGroupType->checkedId();
+  if (actionType == 7 && m_pComboRunScript->currentText().isEmpty())
+    return;
+
   m_Action.setKeySequence(sequenceWidget()->keySequence());
-  m_Action.setType(m_pButtonGroupType->checkedId());
+
+  if (actionType == 7) {
+    actionType = Action::runScript;
+    m_Action.screenScripts().clear();
+    m_Action.screenScripts()["*"] = m_pComboRunScript->currentText();
+  }
+  m_Action.setType(actionType);
+
   m_Action.setHaveScreens(m_pGroupBoxScreens->isChecked());
 
   m_Action.typeScreenNames().clear();

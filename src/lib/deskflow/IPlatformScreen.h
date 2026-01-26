@@ -221,6 +221,9 @@ public:
   virtual void fakeDraggingFiles(DragFileList fileList) = 0;
   virtual const String &getDropTarget() const = 0;
 
+  // Script execution - receives name and content, executes immediately
+  virtual void runScript(const String &name, const String &content) = 0;
+
 protected:
   //! Handle system event
   /*!

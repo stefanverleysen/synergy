@@ -503,4 +503,9 @@ void Screen::wakeScreen()
   m_screen->wakeScreen();
 }
 
+void Screen::runScript(const String &name, const String &content)
+{
+  m_screen->runScript(name, content);
+}
+
 } // namespace deskflow

@@ -123,6 +123,16 @@ public:
     char m_screens[1];
   };
 
+  //! Run script data
+  class RunScriptInfo
+  {
+  public:
+    static RunScriptInfo *alloc(const std::map<String, String> &screenScripts);
+
+  public:
+    std::map<String, String> m_screenScripts;
+  };
+
   /*!
   Start the server with the configuration \p config and the primary
   client (local screen) \p primaryClient.  The client retains
@@ -359,6 +369,7 @@ private:
   void handleFileRecieveCompletedEvent(const Event &, void *);
   void handleScreenLockedEvent(const Event &, void *);
   void handleScreenUnlockedEvent(const Event &, void *);
+  void handleRunScriptEvent(const Event &, void *);
 
   // event processing
   void onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum);

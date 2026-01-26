@@ -302,6 +302,10 @@ extern const char *const kMsgDScreenLock;
 // wake up the display from sleep/idle state
 extern const char *const kMsgDScreenWake;
 
+// run script:  primary -> secondary
+// $1 = script name, $2 = windows content, $3 = mac content, $4 = linux content
+extern const char *const kMsgDRunScript;
+
 //
 // query codes
 //

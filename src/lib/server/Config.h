@@ -494,6 +494,7 @@ private:
   void readSectionScreens(ConfigReadContext &);
   void readSectionLinks(ConfigReadContext &);
   void readSectionAliases(ConfigReadContext &);
+  void readSectionScripts(ConfigReadContext &);
 
   InputFilter::Condition *parseCondition(ConfigReadContext &, const String &condition, const std::vector<String> &args);
   void parseAction(
@@ -504,6 +505,12 @@ private:
   static const char *getOptionName(OptionID);
   static String getOptionValue(OptionID, OptionValue);
 
+public:
+  const std::map<String, String> &getScripts() const
+  {
+    return m_scripts;
+  }
+
 private:
   CellMap m_map;
   NameMap m_nameToCanonicalName;
@@ -513,6 +520,7 @@ private:
   bool m_hasLockToScreenAction;
   IEventQueue *m_events;
   String m_ClientAddress;
+  std::map<String, String> m_scripts;
 };
 
 //! Configuration read context

@@ -115,6 +115,9 @@ public:
   //! Send dragging file information back to server
   void sendDragInfo(UInt32 fileCount, String &info, size_t size);
 
+  //! Execute a script with the given content
+  void executeScript(const String &name, const String &content);
+
   //@}
   //! @name accessors
   //@{

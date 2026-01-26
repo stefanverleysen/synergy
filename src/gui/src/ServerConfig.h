@@ -28,6 +28,20 @@
 const auto kDefaultColumns = 5;
 const auto kDefaultRows = 3;
 
+struct Script
+{
+  QString name;
+  QString windowsContent;
+  QString macContent;
+  QString linuxContent;
+
+  bool operator==(const Script &other) const
+  {
+    return name == other.name && windowsContent == other.windowsContent && macContent == other.macContent &&
+           linuxContent == other.linuxContent;
+  }
+};
+
 class QTextStream;
 class QSettings;
 class QString;
@@ -115,6 +129,14 @@ public:
   const HotkeyList &hotkeys() const
   {
     return m_Hotkeys;
+  }
+  const QList<Script> &scripts() const
+  {
+    return m_Scripts;
+  }
+  QList<Script> &scripts()
+  {
+    return m_Scripts;
   }
   bool disableLockToScreen() const
   {
@@ -265,6 +287,7 @@ private:
   QString m_ClientAddress = "";
   QList<bool> m_SwitchCorners;
   HotkeyList m_Hotkeys;
+  QList<Script> m_Scripts;
 
   AppConfig *m_pAppConfig;
   MainWindow *m_pMainWindow;

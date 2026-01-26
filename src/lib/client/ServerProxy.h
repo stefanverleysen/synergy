@@ -130,6 +130,7 @@ private:
   void setServerLanguages();
   void setActiveServerLanguage(const String &language);
   void checkMissedLanguages() const;
+  void runScript();
 
 private:
   typedef EResult (ServerProxy::*MessageParser)(const UInt8 *);

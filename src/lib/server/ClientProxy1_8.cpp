@@ -48,3 +48,11 @@ void ClientProxy1_8::keyDown(KeyID key, KeyModifierMask mask, KeyButton button, 
   );
   ProtocolUtil::writef(getStream(), kMsgDKeyDownLang, key, mask, button, &language);
 }
+
+void ClientProxy1_8::runScript(
+    const String &name, const String &winContent, const String &macContent, const String &linuxContent
+)
+{
+  LOG((CLOG_DEBUG1 "run script \"%s\" on \"%s\"", name.c_str(), getName().c_str()));
+  ProtocolUtil::writef(getStream(), kMsgDRunScript, &name, &winContent, &macContent, &linuxContent);
+}

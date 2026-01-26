@@ -339,6 +339,14 @@ void ClientProxy1_0::secureInputNotification(const String &app) const
   LOG((CLOG_DEBUG "secureInputNotification not supported"));
 }
 
+void ClientProxy1_0::runScript(
+    const String &name, const String &winContent, const String &macContent, const String &linuxContent
+)
+{
+  // ignore -- not supported in protocol 1.0
+  LOG((CLOG_DEBUG "runScript not supported in protocol 1.0"));
+}
+
 void ClientProxy1_0::screensaver(bool on)
 {
   LOG((CLOG_DEBUG1 "send screen saver to \"%s\" on=%d", getName().c_str(), on ? 1 : 0));

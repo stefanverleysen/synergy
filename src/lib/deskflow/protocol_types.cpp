@@ -52,6 +52,7 @@ const char *const kMsgDSecureInputNotification = "SECN%s";
 const char *const kMsgDLanguageSynchronisation = "LSYN%s";
 const char *const kMsgDScreenLock = "DSLK%1i%s";
 const char *const kMsgDScreenWake = "DSWK";
+const char *const kMsgDRunScript = "DRSC%s%s%s%s"; // name, windows, mac, linux content
 const char *const kMsgQInfo = "QINF";
 const char *const kMsgEIncompatible = "EICV%2i%2i";
 const char *const kMsgEBusy = "EBSY";

@@ -174,6 +174,9 @@ Server::Server(
       new TMethodEventJob<Server>(this, &Server::handleLockAllScreensEvent)
   );
   m_events->adoptHandler(
+      m_events->forServer().runScript(), m_inputFilter, new TMethodEventJob<Server>(this, &Server::handleRunScriptEvent)
+  );
+  m_events->adoptHandler(
       m_events->forIPrimaryScreen().fakeInputBegin(), m_inputFilter,
       new TMethodEventJob<Server>(this, &Server::handleFakeInputBeginEvent)
   );
@@ -1487,6 +1490,47 @@ void Server::handleScreenUnlockedEvent(const Event &event, void *)
   }
 }
 
+void Server::handleRunScriptEvent(const Event &event, void *)
+{
+  RunScriptInfo *info = static_cast<RunScriptInfo *>(event.getData());
+  const auto &screenScripts = info->m_screenScripts;
+  const auto &scripts = m_config->getScripts();
+
+  for (const auto &clientPair : m_clients) {
+    const String &clientName = clientPair.first;
+    BaseClientProxy *client = clientPair.second;
+
+    String scriptName;
+    auto it = screenScripts.find(clientName);
+    if (it != screenScripts.end()) {
+      scriptName = it->second;
+    } else {
+      auto wildcard = screenScripts.find("*");
+      if (wildcard != screenScripts.end()) {
+        scriptName = wildcard->second;
+      }
+    }
+
+    if (!scriptName.empty()) {
+      // Look up script content for each platform
+      String winContent, macContent, linuxContent;
+      auto winIt = scripts.find(scriptName + ":windows");
+      auto macIt = scripts.find(scriptName + ":mac");
+      auto linuxIt = scripts.find(scriptName + ":linux");
+
+      if (winIt != scripts.end())
+        winContent = winIt->second;
+      if (macIt != scripts.end())
+        macContent = macIt->second;
+      if (linuxIt != scripts.end())
+        linuxContent = linuxIt->second;
+
+      LOG((CLOG_DEBUG "running script \"%s\" on client \"%s\"", scriptName.c_str(), clientName.c_str()));
+      client->runScript(scriptName, winContent, macContent, linuxContent);
+    }
+  }
+}
+
 void Server::onClipboardChanged(BaseClientProxy *sender, ClipboardID id, UInt32 seqNum)
 {
   ClipboardInfo &clipboard = m_clipboards[id];
@@ -2272,6 +2316,17 @@ Server::KeyboardBroadcastInfo *Server::KeyboardBroadcastInfo::alloc(State state,
   KeyboardBroadcastInfo *info = (KeyboardBroadcastInfo *)malloc(sizeof(KeyboardBroadcastInfo) + screens.size());
   info->m_state = state;
   std::copy(screens.c_str(), screens.c_str() + screens.size() + 1, info->m_screens);
+  return info;
+}
+
+//
+// Server::RunScriptInfo
+//
+
+Server::RunScriptInfo *Server::RunScriptInfo::alloc(const std::map<String, String> &screenScripts)
+{
+  RunScriptInfo *info = new RunScriptInfo();
+  info->m_screenScripts = screenScripts;
   return info;
 }
 

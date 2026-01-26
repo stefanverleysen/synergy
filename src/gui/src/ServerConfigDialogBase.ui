@@ -330,6 +330,65 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="m_pTabScripts">
+      <attribute name="title">
+       <string>Scripts</string>
+      </attribute>
+      <layout class="QHBoxLayout">
+       <item>
+        <widget class="QGroupBox" name="m_pGroupBoxScripts">
+         <property name="title">
+          <string>&amp;Scripts</string>
+         </property>
+         <layout class="QGridLayout">
+          <item row="0" column="0" rowspan="4">
+           <widget class="QListWidget" name="m_pListScripts"/>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="m_pButtonNewScript">
+            <property name="text">
+             <string>&amp;New</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="m_pButtonEditScript">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>&amp;Edit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="m_pButtonRemoveScript">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>&amp;Remove</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <spacer name="verticalSpacer_scripts">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>75</width>
+              <height>161</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="m_pTabAdvanced">
       <attribute name="title">
        <string>Advanced</string>
@@ -1163,6 +1222,10 @@ Enabling this setting will disable the server config GUI.</string>
   <tabstop>m_pButtonNewAction</tabstop>
   <tabstop>m_pButtonEditAction</tabstop>
   <tabstop>m_pButtonRemoveAction</tabstop>
+  <tabstop>m_pListScripts</tabstop>
+  <tabstop>m_pButtonNewScript</tabstop>
+  <tabstop>m_pButtonEditScript</tabstop>
+  <tabstop>m_pButtonRemoveScript</tabstop>
   <tabstop>m_pCheckBoxSwitchDelay</tabstop>
   <tabstop>m_pSpinBoxSwitchDelay</tabstop>
   <tabstop>m_pCheckBoxSwitchDoubleTap</tabstop>
@@ -1294,6 +1357,22 @@ Enabling this setting will disable the server config GUI.</string>
     <hint type="destinationlabel">
      <x>677</x>
      <y>118</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>m_pListScripts</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>m_pButtonEditScript</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>197</x>
+     <y>115</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>304</x>
+     <y>115</y>
     </hint>
    </hints>
   </connection>

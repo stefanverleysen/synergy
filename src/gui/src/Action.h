@@ -23,6 +23,7 @@
 #include "KeySequence.h"
 
 #include <QList>
+#include <QMap>
 #include <QString>
 #include <QStringList>
 
@@ -49,6 +50,7 @@ public:
     mouseUp,
     mousebutton,
     lockAllScreens,
+    runScript,
   };
   enum SwitchDirection
   {
@@ -107,6 +109,10 @@ public:
   {
     return m_restartServer;
   }
+  const QMap<QString, QString> &screenScripts() const
+  {
+    return m_ScreenScripts;
+  }
 
   bool operator==(const Action &a) const;
 
@@ -151,6 +157,14 @@ protected:
   {
     m_restartServer = b;
   }
+  void setScreenScripts(const QMap<QString, QString> &scripts)
+  {
+    m_ScreenScripts = scripts;
+  }
+  QMap<QString, QString> &screenScripts()
+  {
+    return m_ScreenScripts;
+  }
 
 private:
   KeySequence m_KeySequence;
@@ -162,6 +176,7 @@ private:
   bool m_ActiveOnRelease;
   bool m_HasScreens;
   bool m_restartServer;
+  QMap<QString, QString> m_ScreenScripts;
 
   static const char *m_ActionTypeNames[];
   static const char *m_SwitchDirectionNames[];

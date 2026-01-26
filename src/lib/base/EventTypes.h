@@ -460,7 +460,8 @@ public:
         m_keyboardBroadcast(Event::kUnknown),
         m_lockCursorToScreen(Event::kUnknown),
         m_screenSwitched(Event::kUnknown),
-        m_lockAllScreens(Event::kUnknown)
+        m_lockAllScreens(Event::kUnknown),
+        m_runScript(Event::kUnknown)
   {
   }
 
@@ -535,6 +536,14 @@ public:
   */
   Event::Type lockAllScreens();
 
+  //! Get run script event type
+  /*!
+  Returns the run script event type.  The server responds to this by
+  sending a run script message to clients.  The event data is a
+  \c RunScriptInfo*.
+  */
+  Event::Type runScript();
+
   //@}
 
 private:
@@ -547,6 +556,7 @@ private:
   Event::Type m_lockCursorToScreen;
   Event::Type m_screenSwitched;
   Event::Type m_lockAllScreens;
+  Event::Type m_runScript;
 };
 
 class ServerAppEvents : public EventTypes

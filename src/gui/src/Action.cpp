@@ -23,7 +23,7 @@
 
 const char *Action::m_ActionTypeNames[] = {
     "keyDown",       "keyUp",     "keystroke",   "switchToScreen", "switchInDirection", "lockCursorToScreen",
-    "restartServer", "mouseDown", "mouseUp",     "mousebutton",    "lockAllScreens"
+    "restartServer", "mouseDown", "mouseUp",     "mousebutton",    "lockAllScreens",    "runScript"
 };
 
 const char *Action::m_SwitchDirectionNames[] = {"left", "right", "up", "down"};
@@ -83,8 +83,22 @@ QString Action::text() const
     break;
 
   case lockAllScreens:
-    // lockAllScreens has no arguments, return without parentheses
     return QString(m_ActionTypeNames[type()]);
+
+  case runScript: {
+    bool first = true;
+    for (auto it = m_ScreenScripts.constBegin(); it != m_ScreenScripts.constEnd(); ++it) {
+      if (!first)
+        text += ",";
+      first = false;
+      if (it.key() == "*") {
+        text += it.value();
+      } else {
+        text += it.key() + ":" + it.value();
+      }
+    }
+  } break;
+
   default:
     Q_ASSERT(0);
     break;
@@ -114,6 +128,16 @@ void Action::loadSettings(QSettings &settings)
   setActiveOnRelease(settings.value("activeOnRelease", false).toBool());
   setHaveScreens(settings.value("hasScreens", false).toBool());
   setRestartServer(settings.value("restartServer", false).toBool());
+
+  screenScripts().clear();
+  int numScreenScripts = settings.beginReadArray("screenScripts");
+  for (int i = 0; i < numScreenScripts; i++) {
+    settings.setArrayIndex(i);
+    QString screen = settings.value("screen").toString();
+    QString script = settings.value("script").toString();
+    screenScripts()[screen] = script;
+  }
+  settings.endArray();
 }
 
 void Action::saveSettings(QSettings &settings) const
@@ -134,6 +158,15 @@ void Action::saveSettings(QSettings &settings) const
   settings.setValue("activeOnRelease", activeOnRelease());
   settings.setValue("hasScreens", haveScreens());
   settings.setValue("restartServer", restartServer());
+
+  settings.beginWriteArray("screenScripts");
+  int i = 0;
+  for (auto it = screenScripts().constBegin(); it != screenScripts().constEnd(); ++it) {
+    settings.setArrayIndex(i++);
+    settings.setValue("screen", it.key());
+    settings.setValue("script", it.value());
+  }
+  settings.endArray();
 }
 
 bool Action::operator==(const Action &a) const
@@ -141,7 +174,8 @@ bool Action::operator==(const Action &a) const
   return m_KeySequence == a.m_KeySequence && m_Type == a.m_Type && m_TypeScreenNames == a.m_TypeScreenNames &&
          m_SwitchScreenName == a.m_SwitchScreenName && m_SwitchDirection == a.m_SwitchDirection &&
          m_LockCursorMode == a.m_LockCursorMode && m_ActiveOnRelease == a.m_ActiveOnRelease &&
-         m_HasScreens == a.m_HasScreens && m_restartServer == a.m_restartServer;
+         m_HasScreens == a.m_HasScreens && m_restartServer == a.m_restartServer &&
+         m_ScreenScripts == a.m_ScreenScripts;
 }
 
 QTextStream &operator<<(QTextStream &outStream, const Action &action)

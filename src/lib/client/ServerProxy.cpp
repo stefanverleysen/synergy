@@ -330,6 +330,8 @@ ServerProxy::EResult ServerProxy::parseMessage(const UInt8 *code)
     dragInfoReceived();
   } else if (memcmp(code, kMsgDSecureInputNotification, 4) == 0) {
     secureInputNotification();
+  } else if (memcmp(code, kMsgDRunScript, 4) == 0) {
+    runScript();
   }
 
   else if (memcmp(code, kMsgCClose, 4) == 0) {
@@ -941,5 +943,27 @@ void ServerProxy::checkMissedLanguages() const
   auto missedLanguages = m_languageManager.getMissedLanguages();
   if (!missedLanguages.empty()) {
     LOG((CLOG_WARN "missing languages: %s", missedLanguages.c_str()));
+  }
+}
+
+void ServerProxy::runScript()
+{
+  String name, winContent, macContent, linuxContent;
+  ProtocolUtil::readf(m_stream, kMsgDRunScript + 4, &name, &winContent, &macContent, &linuxContent);
+  LOG((CLOG_DEBUG "recv run script \"%s\"", name.c_str()));
+
+  // Pick the right content for this platform
+#if defined(_WIN32)
+  const String &content = winContent;
+#elif defined(__APPLE__)
+  const String &content = macContent;
+#else
+  const String &content = linuxContent;
+#endif
+
+  if (!content.empty()) {
+    m_client->executeScript(name, content);
+  } else {
+    LOG((CLOG_DEBUG "script \"%s\" has no content for this platform", name.c_str()));
   }
 }

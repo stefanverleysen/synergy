@@ -255,6 +255,9 @@ public:
   */
   void wakeScreen();
 
+  //! Execute a script with the given content
+  void runScript(const String &name, const String &content);
+
   //@}
   //! @name accessors
   //@{

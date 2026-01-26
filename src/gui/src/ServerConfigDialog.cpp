@@ -21,6 +21,7 @@
 #include "ActionDialog.h"
 #include "HotkeyDialog.h"
 #include "ScreenSettingsDialog.h"
+#include "ScriptDialog.h"
 #include "ServerConfig.h"
 
 #include <QFileDialog>
@@ -77,6 +78,9 @@ ServerConfigDialog::ServerConfigDialog(QWidget *parent, ServerConfig &config, Ap
 
   foreach (const Hotkey &hotkey, serverConfig().hotkeys())
     m_pListHotkeys->addItem(hotkey.text());
+
+  foreach (const Script &script, serverConfig().scripts())
+    m_pListScripts->addItem(script.name);
 
   m_pScreenSetupView->setModel(&m_ScreenSetupModel);
 
@@ -357,6 +361,57 @@ void ServerConfigDialog::on_m_pListHotkeys_itemSelectionChanged()
   }
 }
 
+void ServerConfigDialog::on_m_pButtonNewScript_clicked()
+{
+  ScriptDialog dlg(this);
+  if (dlg.exec() == QDialog::Accepted) {
+    Script script;
+    script.name = dlg.scriptName();
+    script.windowsContent = dlg.windowsContent();
+    script.macContent = dlg.macContent();
+    script.linuxContent = dlg.linuxContent();
+    serverConfig().scripts().append(script);
+    m_pListScripts->addItem(script.name);
+    onChange();
+  }
+}
+
+void ServerConfigDialog::on_m_pListScripts_itemSelectionChanged()
+{
+  bool selected = !m_pListScripts->selectedItems().isEmpty();
+  m_pButtonEditScript->setEnabled(selected);
+  m_pButtonRemoveScript->setEnabled(selected);
+}
+
+void ServerConfigDialog::on_m_pButtonEditScript_clicked()
+{
+  int idx = m_pListScripts->currentRow();
+  Q_ASSERT(idx >= 0 && idx < serverConfig().scripts().size());
+  Script &script = serverConfig().scripts()[idx];
+  ScriptDialog dlg(this);
+  dlg.setScriptName(script.name);
+  dlg.setWindowsContent(script.windowsContent);
+  dlg.setMacContent(script.macContent);
+  dlg.setLinuxContent(script.linuxContent);
+  if (dlg.exec() == QDialog::Accepted) {
+    script.name = dlg.scriptName();
+    script.windowsContent = dlg.windowsContent();
+    script.macContent = dlg.macContent();
+    script.linuxContent = dlg.linuxContent();
+    m_pListScripts->currentItem()->setText(script.name);
+    onChange();
+  }
+}
+
+void ServerConfigDialog::on_m_pButtonRemoveScript_clicked()
+{
+  int idx = m_pListScripts->currentRow();
+  Q_ASSERT(idx >= 0 && idx < serverConfig().scripts().size());
+  serverConfig().scripts().removeAt(idx);
+  delete m_pListScripts->item(idx);
+  onChange();
+}
+
 void ServerConfigDialog::on_m_pButtonNewAction_clicked()
 {
   int idx = m_pListHotkeys->currentRow();
@@ -438,6 +493,7 @@ void ServerConfigDialog::on_m_pCheckBoxUseExternalConfig_toggled(bool checked)
   m_pTabWidget->setTabEnabled(0, !checked);
   m_pTabWidget->setTabEnabled(1, !checked);
   m_pTabWidget->setTabEnabled(2, !checked);
+  m_pTabWidget->setTabEnabled(3, !checked);
 }
 
 bool ServerConfigDialog::on_m_pButtonBrowseConfigFile_clicked()

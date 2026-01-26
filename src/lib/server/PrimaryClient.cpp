@@ -260,6 +260,22 @@ void PrimaryClient::secureInputNotification(const String &app) const
   }
 }
 
+void PrimaryClient::runScript(
+    const String &name, const String &winContent, const String &macContent, const String &linuxContent
+)
+{
+#if defined(_WIN32)
+  const String &content = winContent;
+#elif defined(__APPLE__)
+  const String &content = macContent;
+#else
+  const String &content = linuxContent;
+#endif
+  if (!content.empty()) {
+    m_screen->runScript(name, content);
+  }
+}
+
 void PrimaryClient::resetOptions()
 {
   m_screen->resetOptions();

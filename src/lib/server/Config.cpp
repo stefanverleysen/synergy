@@ -608,6 +608,7 @@ void Config::readSection(ConfigReadContext &s)
   static const char s_screens[] = "screens";
   static const char s_links[] = "links";
   static const char s_aliases[] = "aliases";
+  static const char s_scripts[] = "scripts";
 
   String line;
   if (!s.readLine(line)) {
@@ -640,6 +641,8 @@ void Config::readSection(ConfigReadContext &s)
     readSectionLinks(s);
   } else if (name == s_aliases) {
     readSectionAliases(s);
+  } else if (name == s_scripts) {
+    readSectionScripts(s);
   } else {
     throw XConfigRead(s, "unknown section name \"%{1}\"", name);
   }
@@ -939,6 +942,43 @@ void Config::readSectionAliases(ConfigReadContext &s)
   throw XConfigRead(s, "unexpected end of aliases section");
 }
 
+void Config::readSectionScripts(ConfigReadContext &s)
+{
+  String line;
+  while (s.readLine(line)) {
+    if (line == "end") {
+      return;
+    }
+
+    // Format: scriptName:platform = content
+    String::size_type eqPos = line.find('=');
+    if (eqPos == String::npos) {
+      continue;
+    }
+
+    String nameAndPlatform = line.substr(0, eqPos);
+    String content = line.substr(eqPos + 1);
+
+    // Trim leading and trailing whitespace from key
+    while (!nameAndPlatform.empty() && (nameAndPlatform.front() == ' ' || nameAndPlatform.front() == '\t')) {
+      nameAndPlatform.erase(0, 1);
+    }
+    while (!nameAndPlatform.empty() && (nameAndPlatform.back() == ' ' || nameAndPlatform.back() == '\t')) {
+      nameAndPlatform.pop_back();
+    }
+    // Trim leading whitespace from content
+    while (!content.empty() && (content.front() == ' ' || content.front() == '\t')) {
+      content.erase(0, 1);
+    }
+
+    // Store as "scriptName:platform" -> content
+    if (!nameAndPlatform.empty() && !content.empty()) {
+      m_scripts[nameAndPlatform] = content;
+    }
+  }
+  throw XConfigRead(s, "unexpected end of scripts section");
+}
+
 InputFilter::Condition *
 Config::parseCondition(ConfigReadContext &s, const String &name, const std::vector<String> &args)
 {
@@ -1161,6 +1201,28 @@ void Config::parseAction(
     }
 
     action = new InputFilter::KeyboardBroadcastAction(m_events, mode, screens);
+  }
+
+  else if (name == "runScript") {
+    if (args.empty()) {
+      throw XConfigRead(s, "syntax for action: runScript(screen1:script1[,screen2:script2,...]) or runScript(scriptName)");
+    }
+
+    std::map<String, String> screenScripts;
+    for (const auto &arg : args) {
+      auto colonPos = arg.find(':');
+      if (colonPos != String::npos) {
+        String screenName = arg.substr(0, colonPos);
+        String scriptName = arg.substr(colonPos + 1);
+        if (!screenName.empty() && !scriptName.empty()) {
+          screenScripts[screenName] = scriptName;
+        }
+      } else {
+        screenScripts["*"] = arg;
+      }
+    }
+
+    action = new InputFilter::RunScriptAction(m_events, screenScripts);
   }
 
   else {

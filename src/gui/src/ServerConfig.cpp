@@ -78,7 +78,7 @@ bool ServerConfig::operator==(const ServerConfig &sc) const
          m_HasSwitchDelay == sc.m_HasSwitchDelay && m_SwitchDelay == sc.m_SwitchDelay &&
          m_HasSwitchDoubleTap == sc.m_HasSwitchDoubleTap && m_SwitchDoubleTap == sc.m_SwitchDoubleTap &&
          m_SwitchCornerSize == sc.m_SwitchCornerSize && m_SwitchCorners == sc.m_SwitchCorners &&
-         m_Hotkeys == sc.m_Hotkeys && m_pAppConfig == sc.m_pAppConfig &&
+         m_Hotkeys == sc.m_Hotkeys && m_Scripts == sc.m_Scripts && m_pAppConfig == sc.m_pAppConfig &&
          m_DisableLockToScreen == sc.m_DisableLockToScreen && m_ClipboardSharing == sc.m_ClipboardSharing &&
          m_ClipboardSharingSize == sc.m_ClipboardSharingSize && m_LockAllScreens == sc.m_LockAllScreens &&
          m_pMainWindow == sc.m_pMainWindow;
@@ -154,6 +154,16 @@ void ServerConfig::commit()
   }
   settings().endArray();
 
+  settings().beginWriteArray("scripts");
+  for (int i = 0; i < m_Scripts.size(); i++) {
+    settings().setArrayIndex(i);
+    settings().setValue("name", m_Scripts[i].name);
+    settings().setValue("windowsContent", m_Scripts[i].windowsContent);
+    settings().setValue("macContent", m_Scripts[i].macContent);
+    settings().setValue("linuxContent", m_Scripts[i].linuxContent);
+  }
+  settings().endArray();
+
   settings().endGroup();
 }
 
@@ -206,6 +216,19 @@ void ServerConfig::recall()
     Hotkey h;
     h.loadSettings(settings().get());
     hotkeys().append(h);
+  }
+  settings().endArray();
+
+  m_Scripts.clear();
+  int numScripts = settings().beginReadArray("scripts");
+  for (int i = 0; i < numScripts; i++) {
+    settings().setArrayIndex(i);
+    Script script;
+    script.name = settings().value("name").toString();
+    script.windowsContent = settings().value("windowsContent").toString();
+    script.macContent = settings().value("macContent").toString();
+    script.linuxContent = settings().value("linuxContent").toString();
+    m_Scripts.append(script);
   }
   settings().endArray();
 
@@ -272,6 +295,22 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
     }
 
   outStream << "end" << Qt::endl << Qt::endl;
+
+  if (!config.scripts().isEmpty()) {
+    outStream << "section: scripts" << Qt::endl;
+    for (const Script &script : config.scripts()) {
+      if (!script.windowsContent.isEmpty()) {
+        outStream << "\t" << script.name << ":windows = " << script.windowsContent << Qt::endl;
+      }
+      if (!script.macContent.isEmpty()) {
+        outStream << "\t" << script.name << ":mac = " << script.macContent << Qt::endl;
+      }
+      if (!script.linuxContent.isEmpty()) {
+        outStream << "\t" << script.name << ":linux = " << script.linuxContent << Qt::endl;
+      }
+    }
+    outStream << "end" << Qt::endl << Qt::endl;
+  }
 
   outStream << "section: options" << Qt::endl;
 
