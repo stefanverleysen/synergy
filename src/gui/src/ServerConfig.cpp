@@ -81,7 +81,7 @@ bool ServerConfig::operator==(const ServerConfig &sc) const
          m_Hotkeys == sc.m_Hotkeys && m_Scripts == sc.m_Scripts && m_pAppConfig == sc.m_pAppConfig &&
          m_DisableLockToScreen == sc.m_DisableLockToScreen && m_ClipboardSharing == sc.m_ClipboardSharing &&
          m_ClipboardSharingSize == sc.m_ClipboardSharingSize && m_LockAllScreens == sc.m_LockAllScreens &&
-         m_pMainWindow == sc.m_pMainWindow;
+         m_TouchInputLocal == sc.m_TouchInputLocal && m_pMainWindow == sc.m_pMainWindow;
 }
 
 void ServerConfig::save(QFile &file) const
@@ -129,6 +129,7 @@ void ServerConfig::commit()
   settings().setValue("clipboardSharing", clipboardSharing());
   settings().setValue("clipboardSharingSize", QVariant::fromValue(clipboardSharingSize()));
   settings().setValue("lockAllScreens", lockAllScreens());
+  settings().setValue("touchInputLocal", touchInputLocal());
 
   if (!getClientAddress().isEmpty()) {
     settings().setValue("clientAddress", getClientAddress());
@@ -195,6 +196,7 @@ void ServerConfig::recall()
   );
   setClipboardSharing(settings().value("clipboardSharing", true).toBool());
   setLockAllScreens(settings().value("lockAllScreens", false).toBool());
+  setTouchInputLocal(settings().value("touchInputLocal", false).toBool());
   setClientAddress(settings().value("clientAddress", "").toString());
 
   readSettings(settings(), switchCorners(), "switchCorner", 0, static_cast<int>(NumSwitchCorners));
@@ -241,6 +243,9 @@ void ServerConfig::recall()
   }
   if (locked.contains("clipboardSharingSize")) {
     m_ClipboardSharingSize = locked.value("clipboardSharingSize").toULongLong();
+  }
+  if (locked.contains("touchInputLocal")) {
+    m_TouchInputLocal = locked.value("touchInputLocal").toBool();
   }
   locked.endGroup();
 }
@@ -330,6 +335,8 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
             << "clipboardSharingSize = " << config.clipboardSharingSize() << Qt::endl;
   outStream << "\t"
             << "lockAllScreens = " << (config.lockAllScreens() ? "true" : "false") << Qt::endl;
+  outStream << "\t"
+            << "touchInputLocal = " << (config.touchInputLocal() ? "true" : "false") << Qt::endl;
 
   if (!config.getClientAddress().isEmpty()) {
     outStream << "\t"

@@ -150,9 +150,13 @@ public:
   {
     return m_ClipboardSharingSize;
   }
-  bool lockAllScreens() const
+bool lockAllScreens() const
   {
     return m_LockAllScreens;
+  }
+  bool touchInputLocal() const
+  {
+    return m_TouchInputLocal;
   }
   static size_t defaultClipboardSharingSize();
 
@@ -250,9 +254,13 @@ private:
   {
     m_ClipboardSharing = on;
   }
-  void setLockAllScreens(bool on)
+void setLockAllScreens(bool on)
   {
     m_LockAllScreens = on;
+  }
+  void setTouchInputLocal(bool on)
+  {
+    m_TouchInputLocal = on;
   }
   void setConfigFile(const QString &configFile);
   void setUseExternalConfig(bool useExternalConfig);
@@ -284,6 +292,7 @@ private:
   bool m_DisableLockToScreen = false;
   bool m_ClipboardSharing = true;
   bool m_LockAllScreens = false;
+  bool m_TouchInputLocal = false;
   QString m_ClientAddress = "";
   QList<bool> m_SwitchCorners;
   HotkeyList m_Hotkeys;

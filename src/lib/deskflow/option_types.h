@@ -70,6 +70,7 @@ static const OptionID kOptionDisableLockToScreen = OPTION_CODE("DLTS");
 static const OptionID kOptionClipboardSharing = OPTION_CODE("CLPS");
 static const OptionID kOptionClipboardSharingSize = OPTION_CODE("CLSZ");
 static const OptionID kOptionLockAllScreens = OPTION_CODE("LKAS");
+static const OptionID kOptionTouchInputLocal = OPTION_CODE("TILC");
 //@}
 
 //! @name Screen switch corner enumeration

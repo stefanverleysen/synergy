@@ -189,6 +189,8 @@ private: // HACK
   bool onMouseButton(WPARAM, LPARAM);
   bool onMouseMove(SInt32 x, SInt32 y);
   bool onMouseWheel(SInt32 xDelta, SInt32 yDelta);
+  bool onPointerInput(WPARAM wParam, LPARAM lParam);
+  bool isPointerTypeTouch(UINT32 pointerId) const;
   bool onScreensaver(bool activated);
   bool onDisplayChange();
   bool onClipboardChange();
@@ -348,6 +350,10 @@ private:
   MOUSEKEYS m_mouseKeys;
 
   MSWindowsHook m_hook;
+
+  // Touch input local policy - when true, touch stays on primary screen
+  bool m_touchInputLocal;
+  bool m_lastInputWasTouch;
 
   static MSWindowsScreen *s_screen;
 

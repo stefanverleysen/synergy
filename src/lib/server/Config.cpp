@@ -704,6 +704,8 @@ void Config::readSectionOptions(ConfigReadContext &s)
       addOption("", kOptionClipboardSharingSize, s.parseInt(value));
     } else if (name == "lockAllScreens") {
       addOption("", kOptionLockAllScreens, s.parseBoolean(value));
+    } else if (name == "touchInputLocal") {
+      addOption("", kOptionTouchInputLocal, s.parseBoolean(value));
     } else if (name == "clientAddress") {
       m_ClientAddress = value;
     } else {
@@ -1341,6 +1343,9 @@ const char *Config::getOptionName(OptionID id)
   if (id == kOptionClipboardSharingSize) {
     return "clipboardSharingSize";
   }
+  if (id == kOptionTouchInputLocal) {
+    return "touchInputLocal";
+  }
   return NULL;
 }
 
@@ -1350,7 +1355,7 @@ String Config::getOptionValue(OptionID id, OptionValue value)
       id == kOptionScreenSwitchNeedsShift || id == kOptionScreenSwitchNeedsControl ||
       id == kOptionScreenSwitchNeedsAlt || id == kOptionXTestXineramaUnaware || id == kOptionRelativeMouseMoves ||
       id == kOptionWin32KeepForeground || id == kOptionScreenPreserveFocus || id == kOptionClipboardSharing ||
-      id == kOptionClipboardSharingSize) {
+      id == kOptionClipboardSharingSize || id == kOptionTouchInputLocal) {
     return (value != 0) ? "true" : "false";
   }
   if (id == kOptionModifierMapForShift || id == kOptionModifierMapForControl || id == kOptionModifierMapForAlt ||
