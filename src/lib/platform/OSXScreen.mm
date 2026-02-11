@@ -41,6 +41,8 @@
 #include "platform/OSXPasteboardPeeker.h"
 #include "platform/OSXScreenSaver.h"
 
+#include "deskflow/option_types.h"
+
 #include <AppKit/NSEvent.h>
 #include <AvailabilityMacros.h>
 #include <IOKit/hidsystem/event_status_driver.h>
@@ -118,6 +120,7 @@ OSXScreen::OSXScreen(
       m_lastSingleClickYCursor(0),
       m_events(events),
       m_getDropTargetThread(nullptr),
+      m_touchActivateScreen(false),
       m_impl(NULL)
 {
   m_displayID = CGMainDisplayID();
@@ -911,12 +914,18 @@ void OSXScreen::screensaver(bool activate)
 
 void OSXScreen::resetOptions()
 {
-  // no options
+  m_touchActivateScreen = false;
 }
 
-void OSXScreen::setOptions(const OptionsList &)
+void OSXScreen::setOptions(const OptionsList &options)
 {
-  // no options
+  for (UInt32 i = 0, n = (UInt32)options.size(); i < n; i += 2) {
+    if (options[i] == kOptionTouchActivateScreen) {
+      m_touchActivateScreen = (options[i + 1] != 0);
+      LOG((CLOG_DEBUG "touch activate screen set to %s",
+           m_touchActivateScreen ? "true" : "false"));
+    }
+  }
 }
 
 void OSXScreen::setSequenceNumber(UInt32 seqNum)
@@ -1766,20 +1775,35 @@ bool OSXScreen::HotKeyItem::operator<(const HotKeyItem &x) const
 CGEventRef
 OSXScreen::handleCGInputEventSecondary(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon)
 {
-  // this fix is really screwing with the correct show/hide behavior. it
-  // should be tested better before reintroducing.
-  return event;
-
   OSXScreen *screen = (OSXScreen *)refcon;
-  if (screen->m_cursorHidden && type == kCGEventMouseMoved) {
 
-    CGPoint pos = CGEventGetLocation(event);
-    if (pos.x != screen->m_xCenter || pos.y != screen->m_yCenter) {
+  // Touch detection on client: send grabScreen request but let
+  // event pass through so the touch/click reaches the target window.
+  // (Clients have no jump zones, so no bounce-back risk.)
+  if (screen->m_touchActivateScreen && !screen->m_isOnScreen) {
+    if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown ||
+        type == kCGEventOtherMouseDown || type == kCGEventMouseMoved ||
+        type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged ||
+        type == kCGEventOtherMouseDragged) {
 
-      LOG((CLOG_DEBUG "show cursor on secondary, type=%d pos=%d,%d", type, pos.x, pos.y));
-      screen->showCursor();
+      SInt64 subtype = CGEventGetIntegerValueField(event, kCGMouseEventSubtype);
+      if (subtype == kCGEventMouseSubtypeDefault) {
+        if (screen->m_touchDebounceTimer.getTime() >= kTouchDebounceTime) {
+          screen->m_touchDebounceTimer.reset();
+          CGPoint pos = CGEventGetLocation(event);
+          SInt32 x = static_cast<SInt32>(pos.x);
+          SInt32 y = static_cast<SInt32>(pos.y);
+          LOG((CLOG_INFO "touch requesting grab at %d,%d subtype=%lld", x, y, subtype));
+          screen->sendEvent(
+              screen->m_events->forIScreen().grabScreen(),
+              MotionInfo::alloc(x, y));
+        }
+        // Do NOT eat on client — let click reach target window
+        // (same as Windows: hook doesn't return 1 on secondary)
+      }
     }
   }
+
   return event;
 }
 
@@ -1788,6 +1812,50 @@ CGEventRef OSXScreen::handleCGInputEvent(CGEventTapProxy proxy, CGEventType type
 {
   OSXScreen *screen = (OSXScreen *)refcon;
   CGPoint pos;
+
+  // TEMPORARY DIAGNOSTIC — remove after testing
+  if (type == kCGEventLeftMouseDown) {
+    SInt64 subtype = CGEventGetIntegerValueField(event, kCGMouseEventSubtype);
+    SInt64 source = CGEventGetIntegerValueField(event, kCGEventSourceStateID);
+    SInt64 tabletId = CGEventGetIntegerValueField(event, kCGTabletEventDeviceID);
+    SInt64 pressure = CGEventGetIntegerValueField(event, kCGMouseEventPressure);
+    SInt64 eventNumber = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
+    LOG((CLOG_DEBUG "CGEvent type=%d subtype=%lld source=%lld tablet=%lld pressure=%lld eventNum=%lld",
+         (int)type, subtype, source, tabletId, pressure, eventNumber));
+  }
+
+  // Touch detection: must run BEFORE switch to capture position before
+  // onMouseMove warps cursor to center, and before the m_isOnScreen
+  // gatekeeper at end of function swallows unknown event types.
+  if (screen->m_touchActivateScreen && !screen->m_isOnScreen) {
+    if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown ||
+        type == kCGEventOtherMouseDown || type == kCGEventMouseMoved ||
+        type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged ||
+        type == kCGEventOtherMouseDragged) {
+
+      SInt64 subtype = CGEventGetIntegerValueField(event, kCGMouseEventSubtype);
+      if (subtype == kCGEventMouseSubtypeDefault) {
+        // On macOS, USB-C HID touchscreens produce subtype 0 (default),
+        // while mouse and trackpad produce subtype 3 (undocumented).
+        if (screen->m_touchDebounceTimer.getTime() >= kTouchDebounceTime) {
+          screen->m_touchDebounceTimer.reset();
+          pos = CGEventGetLocation(event);
+          SInt32 x = static_cast<SInt32>(pos.x);
+          SInt32 y = static_cast<SInt32>(pos.y);
+          LOG((CLOG_INFO "touch activating primary at %d,%d subtype=%lld", x, y, subtype));
+          screen->sendEvent(
+              screen->m_events->forIPrimaryScreen().touchActivatedPrimary(),
+              MotionInfo::alloc(x, y));
+        }
+        // Eat ALL touch events on primary when off-screen (even debounced ones).
+        // This prevents:
+        // - Edge detection from seeing cursor at screen edges (bounce-back bug)
+        // - Button state from tracking a phantom mouse-down (lock-to-screen bug)
+        // - onMouseMove from warping cursor position
+        return NULL;
+      }
+    }
+  }
 
   switch (type) {
   case kCGEventLeftMouseDown:

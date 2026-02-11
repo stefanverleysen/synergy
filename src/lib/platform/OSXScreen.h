@@ -19,6 +19,7 @@
 #pragma once
 
 #include "base/EventTypes.h"
+#include "base/Stopwatch.h"
 #include "common/stdmap.h"
 #include "common/stdvector.h"
 #include "deskflow/DragInformation.h"
@@ -345,6 +346,11 @@ private:
 #endif
 
   OSXPowerManager m_powerManager;
+
+  // Touch activates screen
+  bool m_touchActivateScreen;
+  Stopwatch m_touchDebounceTimer;
+  static constexpr double kTouchDebounceTime = 0.15; // 150ms
 
   class OSXScreenImpl *m_impl;
 };
