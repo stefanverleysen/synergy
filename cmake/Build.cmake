@@ -51,6 +51,8 @@ macro(set_build_date)
   # which allows package maintainers to create reproducible builds.
   # We require CMake 3.8.0 in the root `CMakeLists.txt` for this reason.
   string(TIMESTAMP BUILD_DATE "%Y-%m-%d" UTC)
-  message(STATUS "Build date: ${BUILD_DATE}")
+  string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
+  message(STATUS "Build time: ${BUILD_TIME}")
   add_definitions(-DBUILD_DATE="${BUILD_DATE}")
+  add_definitions(-DBUILD_TIME="${BUILD_TIME}")
 endmacro()

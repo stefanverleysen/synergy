@@ -40,9 +40,7 @@ AboutDialog::AboutDialog(MainWindow *parent)
   QString version = QString::fromStdString(kVersion);
   m_pLabelDeskflowVersion->setText(version);
 
-  QString buildDateString = QString::fromLocal8Bit(BUILD_DATE).simplified();
-  QDate buildDate = QLocale("en_US").toDate(buildDateString, "yyyy-MM-dd");
-  m_pLabelBuildDate->setText(buildDate.toString(QLocale::system().dateFormat(QLocale::LongFormat)));
+  m_pLabelBuildDate->setText(QString::fromLocal8Bit(BUILD_TIME));
 
   this->setWindowTitle(QString("About %1").arg(DESKFLOW_APP_NAME));
 }
