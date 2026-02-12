@@ -414,20 +414,12 @@ LRESULT CALLBACK MSWindowsDesks::primaryDeskProc(HWND hwnd, UINT msg, WPARAM wPa
 
 LRESULT CALLBACK MSWindowsDesks::secondaryDeskProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-  // would like to detect any local user input and hide the hider
-  // window but for now we just detect mouse motion.
-  bool hide = false;
   switch (msg) {
-  case WM_MOUSEMOVE:
-    if (LOWORD(lParam) != 0 || HIWORD(lParam) != 0) {
-      hide = true;
-    }
-    break;
-  }
-
-  if (hide && IsWindowVisible(hwnd)) {
-    ReleaseCapture();
-    SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+  case WM_SETCURSOR:
+    // Force blank cursor. On touchscreen devices, ShowCursor(FALSE) may
+    // not reliably hide the cursor, so we also set a NULL cursor here.
+    SetCursor(NULL);
+    return TRUE;
   }
 
   return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -519,6 +511,10 @@ void MSWindowsDesks::deskEnter(Desk *desk)
 {
   if (!m_isPrimary) {
     ReleaseCapture();
+
+    // re-enable hit-test passthrough so clicks reach windows behind the hider
+    LONG_PTR exStyle = GetWindowLongPtr(desk->m_window, GWL_EXSTYLE);
+    SetWindowLongPtr(desk->m_window, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);
   }
 
   setCursorVisibility(true);
@@ -600,23 +596,22 @@ void MSWindowsDesks::deskLeave(Desk *desk, HKL keyLayout)
       }
     }
   } else {
-    // move hider window under the cursor center, raise, and show it
-    SetWindowPos(desk->m_window, HWND_TOP, m_xCenter, m_yCenter, 1, 1, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    // Remove WS_EX_TRANSPARENT so the hider window receives hit-testing
+    // and its blank cursor class applies. Without this, hit-testing
+    // passes through and the cursor of the window behind is shown.
+    LONG_PTR exStyle = GetWindowLongPtr(desk->m_window, GWL_EXSTYLE);
+    SetWindowLongPtr(desk->m_window, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
 
-    // watch for mouse motion.  if we see any then we hide the
-    // hider window so the user can use the physically attached
-    // mouse if desired.  we'd rather not capture the mouse but
-    // we aren't notified when the mouse leaves our window.
+    // Cover the entire screen with the hider window so the blank cursor
+    // class applies everywhere. On touchscreen devices, ShowCursor(FALSE)
+    // is unreliable, so the blank cursor on a full-screen window is the
+    // primary hiding mechanism.
+    SetWindowPos(desk->m_window, HWND_TOPMOST, m_x, m_y, m_w, m_h, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+
     SetCapture(desk->m_window);
 
-    // windows can take a while to hide the cursor, so wait a few milliseconds to ensure the cursor
-    // is hidden before centering. this doesn't seem to affect the fluidity of the transition.
-    // without this, the cursor appears to flicker in the center of the screen which is annoying.
-    // a slightly more elegant but complex solution could be to use a timed event.
-    // 30 ms seems to work well enough without making the transition feel janky; a lower number
-    // would be better but 10 ms doesn't seem to be quite long enough, as we get noticeable flicker.
-    // this is largely a balance and out of our control, since windows can be unpredictable...
-    // maybe another approach would be to repeatedly check the cursor visibility until it is hidden.
+    // 30ms: experimentally determined minimum for the hider window's blank
+    // cursor to take effect before we reposition (shorter causes flicker)
     LOG_DEBUG1("centering cursor on leave: %+d,%+d", m_xCenter, m_yCenter);
     ARCH->sleep(0.03);
     deskMouseMove(m_xCenter, m_yCenter);
