@@ -740,11 +740,25 @@
        <number>10</number>
       </property>
       <item>
-       <widget class="QLineEdit" name="m_pLineEditAnchoredKeys">
-        <property name="placeholderText">
-         <string>e.g. F13, LeftCtrl, A, NumPad5</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayoutAnchoredKeys">
+        <item>
+         <widget class="QLineEdit" name="m_pLineEditAnchoredKeys">
+          <property name="placeholderText">
+           <string>e.g. F13, LeftCtrl, A, NumPad5</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="m_pButtonCaptureKey">
+          <property name="text">
+           <string>Capture</string>
+          </property>
+          <property name="toolTip">
+           <string>Press to capture the next key</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QLabel" name="m_pLabelAnchoredKeysHelp">

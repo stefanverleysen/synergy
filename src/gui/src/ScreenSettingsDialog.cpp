@@ -24,6 +24,7 @@
 #include "gui/validators/ScreenNameValidator.h"
 #include "gui/validators/ValidationError.h"
 
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QtCore>
 #include <QtGui>
@@ -154,4 +155,123 @@ void ScreenSettingsDialog::on_m_pButtonRemoveAlias_clicked()
 void ScreenSettingsDialog::on_m_pListAliases_itemSelectionChanged()
 {
   m_pButtonRemoveAlias->setEnabled(!m_pListAliases->selectedItems().isEmpty());
+}
+
+void ScreenSettingsDialog::on_m_pButtonCaptureKey_clicked()
+{
+  m_capturingKey = true;
+  m_pButtonCaptureKey->setText(tr("Press a key..."));
+  qApp->installEventFilter(this);
+}
+
+void ScreenSettingsDialog::stopCapturing()
+{
+  m_capturingKey = false;
+  m_pButtonCaptureKey->setText(tr("Capture"));
+  qApp->removeEventFilter(this);
+}
+
+bool ScreenSettingsDialog::eventFilter(QObject *obj, QEvent *event)
+{
+  if (!m_capturingKey)
+    return QDialog::eventFilter(obj, event);
+
+  if (event->type() == QEvent::ShortcutOverride) {
+    event->accept();
+    return true;
+  }
+
+  if (event->type() == QEvent::KeyPress) {
+    auto *keyEvent = static_cast<QKeyEvent *>(event);
+    quint32 vk = keyEvent->nativeVirtualKey();
+
+    // Qt returns 0 for some modifier-only presses
+    if (vk == 0)
+      vk = qtKeyToVk(keyEvent->key());
+
+    QString name = vkCodeToName(vk);
+
+    if (!name.isEmpty()) {
+      QString current = m_pLineEditAnchoredKeys->text().trimmed();
+      if (!current.isEmpty())
+        current += ", ";
+      current += name;
+      m_pLineEditAnchoredKeys->setText(current);
+    }
+
+    stopCapturing();
+    return true;
+  }
+
+  return QDialog::eventFilter(obj, event);
+}
+
+QString ScreenSettingsDialog::vkCodeToName(quint32 vk)
+{
+  struct VkEntry {
+    quint32 vk;
+    const char *name;
+  };
+
+  static const VkEntry entries[] = {
+      {0x08, "Backspace"}, {0x09, "Tab"},       {0x0D, "Enter"},
+      {0x10, "Shift"},     {0x11, "Control"},   {0x12, "Alt"},
+      {0x13, "Pause"},     {0x14, "CapsLock"},  {0x1B, "Escape"},
+      {0x20, "Space"},     {0x21, "PageUp"},    {0x22, "PageDown"},
+      {0x23, "End"},       {0x24, "Home"},      {0x25, "Left"},
+      {0x26, "Up"},        {0x27, "Right"},     {0x28, "Down"},
+      {0x2C, "PrintScreen"}, {0x2D, "Insert"},  {0x2E, "Delete"},
+      {0x5B, "LeftWin"},   {0x5C, "RightWin"},  {0x5D, "Apps"},
+      {0x60, "NumPad0"},   {0x61, "NumPad1"},   {0x62, "NumPad2"},
+      {0x63, "NumPad3"},   {0x64, "NumPad4"},   {0x65, "NumPad5"},
+      {0x66, "NumPad6"},   {0x67, "NumPad7"},   {0x68, "NumPad8"},
+      {0x69, "NumPad9"},
+      {0x6A, "NumPadMultiply"}, {0x6B, "NumPadAdd"},
+      {0x6D, "NumPadSubtract"}, {0x6E, "NumPadDecimal"},
+      {0x6F, "NumPadDivide"},
+      {0x90, "NumLock"},   {0x91, "ScrollLock"},
+      {0xA0, "LeftShift"}, {0xA1, "RightShift"},
+      {0xA2, "LeftCtrl"},  {0xA3, "RightCtrl"},
+      {0xA4, "LeftAlt"},   {0xA5, "RightAlt"},
+      {0xA6, "BrowserBack"},    {0xA7, "BrowserForward"},
+      {0xAD, "VolumeMute"}, {0xAE, "VolumeDown"}, {0xAF, "VolumeUp"},
+      {0xB0, "MediaNext"}, {0xB1, "MediaPrev"},
+      {0xB2, "MediaStop"}, {0xB3, "MediaPlay"},
+  };
+
+  // F1-F24
+  if (vk >= 0x70 && vk <= 0x87)
+    return QString("F%1").arg(vk - 0x70 + 1);
+
+  // A-Z
+  if (vk >= 0x41 && vk <= 0x5A)
+    return QString(QChar(vk));
+
+  // 0-9
+  if (vk >= 0x30 && vk <= 0x39)
+    return QString(QChar(vk));
+
+  for (const auto &entry : entries) {
+    if (entry.vk == vk)
+      return QString(entry.name);
+  }
+
+  return QString();
+}
+
+quint32 ScreenSettingsDialog::qtKeyToVk(int qtKey)
+{
+  switch (qtKey) {
+  case Qt::Key_Shift:     return 0x10;
+  case Qt::Key_Control:   return 0x11;
+  case Qt::Key_Alt:       return 0x12;
+  case Qt::Key_Meta:      return 0x5B;
+  case Qt::Key_CapsLock:  return 0x14;
+  case Qt::Key_NumLock:   return 0x90;
+  case Qt::Key_ScrollLock: return 0x91;
+  case Qt::Key_Pause:     return 0x13;
+  case Qt::Key_Print:     return 0x2C;
+  case Qt::Key_Escape:    return 0x1B;
+  default:                return 0;
+  }
 }

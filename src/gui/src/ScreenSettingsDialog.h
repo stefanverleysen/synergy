@@ -38,12 +38,20 @@ public:
 public slots:
   void accept();
 
+protected:
+  bool eventFilter(QObject *obj, QEvent *event) override;
+
 private slots:
   void on_m_pButtonAddAlias_clicked();
   void on_m_pButtonRemoveAlias_clicked();
   void on_m_pLineEditAlias_textChanged(const QString &text);
   void on_m_pListAliases_itemSelectionChanged();
+  void on_m_pButtonCaptureKey_clicked();
 
 private:
+  void stopCapturing();
+  static QString vkCodeToName(quint32 vk);
+  static quint32 qtKeyToVk(int qtKey);
   Screen *m_pScreen;
+  bool m_capturingKey = false;
 };

@@ -73,6 +73,12 @@ static const VkNameEntry s_vkNames[] = {
     {"Space", 0x20},       {"Enter", 0x0D},       {"Tab", 0x09},
     {"Backspace", 0x08},   {"Escape", 0x1B},
     {"PrintScreen", 0x2C}, {"Pause", 0x13},       {"Apps", 0x5D},
+    {"Shift", 0x10},       {"Control", 0x11},     {"Alt", 0x12},
+    {"LeftShift", 0xA0},   {"RightShift", 0xA1},
+    {"LeftCtrl", 0xA2},    {"RightCtrl", 0xA3},
+    {"LeftAlt", 0xA4},     {"RightAlt", 0xA5},
+    {"LeftWin", 0x5B},     {"RightWin", 0x5C},
+    {"CapsLock", 0x14},    {"NumLock", 0x90},     {"ScrollLock", 0x91},
     {"BrowserBack", 0xA6},     {"BrowserForward", 0xA7},
     {"BrowserRefresh", 0xA8},  {"BrowserStop", 0xA9},
     {"BrowserSearch", 0xAA},   {"BrowserFavorites", 0xAB},
@@ -917,6 +923,11 @@ void Config::readSectionScreens(ConfigReadContext &s)
             if (vk < 0)
               throw XConfigRead(s, "anchoredKeys: unknown key name \"%{1}\"", key);
             mask[vk / 32] |= (1u << (vk % 32));
+
+            // LL hook receives sided VK codes, not generic ones
+            if (vk == 0x10) { mask[0xA0 / 32] |= (1u << (0xA0 % 32)); mask[0xA1 / 32] |= (1u << (0xA1 % 32)); }
+            if (vk == 0x11) { mask[0xA2 / 32] |= (1u << (0xA2 % 32)); mask[0xA3 / 32] |= (1u << (0xA3 % 32)); }
+            if (vk == 0x12) { mask[0xA4 / 32] |= (1u << (0xA4 % 32)); mask[0xA5 / 32] |= (1u << (0xA5 % 32)); }
           }
           pos = comma + 1;
         }
