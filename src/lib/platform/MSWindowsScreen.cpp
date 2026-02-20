@@ -483,16 +483,34 @@ void MSWindowsScreen::setOptions(const OptionsList &options)
 {
   m_desks->setOptions(options);
 
+  UInt32 anchoredMask[8] = {};
+  bool hasAnchoredKeys = false;
+  bool hasLegacyAnchored = false;
+  UInt32 legacyFKeyMask = 0;
+
   for (UInt32 i = 0, n = (UInt32)options.size(); i < n; i += 2) {
     if (options[i] == kOptionTouchActivateScreen) {
       m_touchActivateScreen = (options[i + 1] != 0);
       m_hook.setTouchActivateScreen(m_touchActivateScreen);
       LOG((CLOG_DEBUG "touch activate screen set to %s", m_touchActivateScreen ? "true" : "false"));
-    } else if (options[i] == kOptionAnchoredKeys) {
-      UInt32 mask = static_cast<UInt32>(options[i + 1]);
-      m_hook.setAnchoredKeys(mask);
-      LOG((CLOG_DEBUG "anchored keys mask set to 0x%06x", mask));
     }
+
+    UInt32 akIndex = options[i] - kOptionAnchoredKeys0;
+    if (akIndex < 8) {
+      anchoredMask[akIndex] = static_cast<UInt32>(options[i + 1]);
+      hasAnchoredKeys = true;
+    } else if (options[i] == kOptionAnchoredKeys) {
+      legacyFKeyMask = static_cast<UInt32>(options[i + 1]);
+      hasLegacyAnchored = true;
+    }
+  }
+
+  if (hasAnchoredKeys) {
+    m_hook.setAnchoredKeys(anchoredMask);
+    LOG((CLOG_DEBUG "anchored keys mask set (256-bit)"));
+  } else if (hasLegacyAnchored) {
+    m_hook.setAnchoredKeysFKeys(legacyFKeyMask);
+    LOG((CLOG_DEBUG "anchored keys mask set (legacy F-key)"));
   }
 }
 

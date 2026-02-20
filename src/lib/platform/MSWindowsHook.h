@@ -54,5 +54,6 @@ public:
 
   void setIsPrimary(bool primary);
 
-  void setAnchoredKeys(UInt32 fKeyBitmask);
+  void setAnchoredKeys(const UInt32 mask[8]);
+  void setAnchoredKeysFKeys(UInt32 fKeyBitmask);
 };

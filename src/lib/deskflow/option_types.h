@@ -71,6 +71,14 @@ static const OptionID kOptionClipboardSharing = OPTION_CODE("CLPS");
 static const OptionID kOptionClipboardSharingSize = OPTION_CODE("CLSZ");
 static const OptionID kOptionTouchActivateScreen = OPTION_CODE("TILC");
 static const OptionID kOptionAnchoredKeys = OPTION_CODE("ANKK");
+static const OptionID kOptionAnchoredKeys0 = OPTION_CODE("AK_0");
+static const OptionID kOptionAnchoredKeys1 = OPTION_CODE("AK_1");
+static const OptionID kOptionAnchoredKeys2 = OPTION_CODE("AK_2");
+static const OptionID kOptionAnchoredKeys3 = OPTION_CODE("AK_3");
+static const OptionID kOptionAnchoredKeys4 = OPTION_CODE("AK_4");
+static const OptionID kOptionAnchoredKeys5 = OPTION_CODE("AK_5");
+static const OptionID kOptionAnchoredKeys6 = OPTION_CODE("AK_6");
+static const OptionID kOptionAnchoredKeys7 = OPTION_CODE("AK_7");
 //@}
 
 //! @name Screen switch corner enumeration

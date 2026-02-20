@@ -30,6 +30,81 @@
 
 using namespace deskflow::string;
 
+namespace {
+
+struct VkNameEntry {
+  const char *name;
+  int vkCode;
+};
+
+static const VkNameEntry s_vkNames[] = {
+    {"A", 0x41},           {"B", 0x42},           {"C", 0x43},
+    {"D", 0x44},           {"E", 0x45},           {"F", 0x46},
+    {"G", 0x47},           {"H", 0x48},           {"I", 0x49},
+    {"J", 0x4A},           {"K", 0x4B},           {"L", 0x4C},
+    {"M", 0x4D},           {"N", 0x4E},           {"O", 0x4F},
+    {"P", 0x50},           {"Q", 0x51},           {"R", 0x52},
+    {"S", 0x53},           {"T", 0x54},           {"U", 0x55},
+    {"V", 0x56},           {"W", 0x57},           {"X", 0x58},
+    {"Y", 0x59},           {"Z", 0x5A},
+    {"0", 0x30},           {"1", 0x31},           {"2", 0x32},
+    {"3", 0x33},           {"4", 0x34},           {"5", 0x35},
+    {"6", 0x36},           {"7", 0x37},           {"8", 0x38},
+    {"9", 0x39},
+    {"F1", 0x70},          {"F2", 0x71},          {"F3", 0x72},
+    {"F4", 0x73},          {"F5", 0x74},          {"F6", 0x75},
+    {"F7", 0x76},          {"F8", 0x77},          {"F9", 0x78},
+    {"F10", 0x79},         {"F11", 0x7A},         {"F12", 0x7B},
+    {"F13", 0x7C},         {"F14", 0x7D},         {"F15", 0x7E},
+    {"F16", 0x7F},         {"F17", 0x80},         {"F18", 0x81},
+    {"F19", 0x82},         {"F20", 0x83},         {"F21", 0x84},
+    {"F22", 0x85},         {"F23", 0x86},         {"F24", 0x87},
+    {"Insert", 0x2D},      {"Delete", 0x2E},      {"Home", 0x24},
+    {"End", 0x23},         {"PageUp", 0x21},      {"PageDown", 0x22},
+    {"Up", 0x26},          {"Down", 0x28},        {"Left", 0x25},
+    {"Right", 0x27},
+    {"NumPad0", 0x60},     {"NumPad1", 0x61},     {"NumPad2", 0x62},
+    {"NumPad3", 0x63},     {"NumPad4", 0x64},     {"NumPad5", 0x65},
+    {"NumPad6", 0x66},     {"NumPad7", 0x67},     {"NumPad8", 0x68},
+    {"NumPad9", 0x69},
+    {"NumPadMultiply", 0x6A}, {"NumPadAdd", 0x6B},
+    {"NumPadSubtract", 0x6D}, {"NumPadDecimal", 0x6E},
+    {"NumPadDivide", 0x6F},
+    {"Space", 0x20},       {"Enter", 0x0D},       {"Tab", 0x09},
+    {"Backspace", 0x08},   {"Escape", 0x1B},
+    {"PrintScreen", 0x2C}, {"Pause", 0x13},       {"Apps", 0x5D},
+    {"BrowserBack", 0xA6},     {"BrowserForward", 0xA7},
+    {"BrowserRefresh", 0xA8},  {"BrowserStop", 0xA9},
+    {"BrowserSearch", 0xAA},   {"BrowserFavorites", 0xAB},
+    {"BrowserHome", 0xAC},
+    {"VolumeMute", 0xAD},  {"VolumeDown", 0xAE},  {"VolumeUp", 0xAF},
+    {"MediaNext", 0xB0},   {"MediaPrev", 0xB1},
+    {"MediaStop", 0xB2},   {"MediaPlay", 0xB3},
+};
+
+static int lookupVkByName(const String &name) {
+  for (const auto &entry : s_vkNames) {
+    if (CaselessCmp::equal(name, String(entry.name)))
+      return entry.vkCode;
+  }
+  return -1;
+}
+
+static const char *lookupNameByVk(int vk) {
+  for (const auto &entry : s_vkNames) {
+    if (entry.vkCode == vk)
+      return entry.name;
+  }
+  return nullptr;
+}
+
+static const OptionID kAnchoredKeysOptions[8] = {
+    kOptionAnchoredKeys0, kOptionAnchoredKeys1, kOptionAnchoredKeys2, kOptionAnchoredKeys3,
+    kOptionAnchoredKeys4, kOptionAnchoredKeys5, kOptionAnchoredKeys6, kOptionAnchoredKeys7,
+};
+
+} // namespace
+
 namespace deskflow::server {
 
 //
@@ -827,7 +902,7 @@ void Config::readSectionScreens(ConfigReadContext &s)
       } else if (name == "preserveFocus") {
         addOption(screen, kOptionScreenPreserveFocus, s.parseBoolean(value));
       } else if (name == "anchoredKeys") {
-        OptionValue mask = 0;
+        UInt32 mask[8] = {0};
         String::size_type pos = 0;
         while (pos < value.size()) {
           String::size_type comma = value.find(',', pos);
@@ -838,25 +913,25 @@ void Config::readSectionScreens(ConfigReadContext &s)
           String::size_type end = key.find_last_not_of(" \t");
           if (start != String::npos) {
             key = key.substr(start, end - start + 1);
-            if (key.size() >= 2 && (key[0] == 'F' || key[0] == 'f')) {
-              const char *numStr = key.c_str() + 1;
-              char *numEnd = nullptr;
-              long n = strtol(numStr, &numEnd, 10);
-              if (*numEnd != '\0' || numEnd == numStr) {
-                throw XConfigRead(s, "anchoredKeys: invalid key name \"%{1}\"", key);
-              }
-              if (n >= 1 && n <= 24) {
-                mask |= (1 << (n - 1));
-              } else {
-                throw XConfigRead(s, "anchoredKeys: F-key out of range (1-24)");
-              }
-            } else {
-              throw XConfigRead(s, "anchoredKeys: expected F-key name like F13");
-            }
+            int vk = lookupVkByName(key);
+            if (vk < 0)
+              throw XConfigRead(s, "anchoredKeys: unknown key name \"%{1}\"", key);
+            mask[vk / 32] |= (1u << (vk % 32));
           }
           pos = comma + 1;
         }
-        addOption(screen, kOptionAnchoredKeys, mask);
+
+        for (int i = 0; i < 8; ++i)
+          addOption(screen, kAnchoredKeysOptions[i], static_cast<OptionValue>(mask[i]));
+
+        // Phase 1 clients only understand F-key bitmask
+        OptionValue fKeyMask = 0;
+        for (int i = 0; i < 24; ++i) {
+          int vk = 0x70 + i;
+          if (mask[vk / 32] & (1u << (vk % 32)))
+            fKeyMask |= (1 << i);
+        }
+        addOption(screen, kOptionAnchoredKeys, fKeyMask);
       } else {
         // unknown argument
         throw XConfigRead(s, "unknown argument \"%{1}\"", name);
@@ -1301,9 +1376,6 @@ const char *Config::getOptionName(OptionID id)
   if (id == kOptionClipboardSharingSize) {
     return "clipboardSharingSize";
   }
-  if (id == kOptionAnchoredKeys) {
-    return "anchoredKeys";
-  }
   return NULL;
 }
 
@@ -1361,18 +1433,6 @@ String Config::getOptionValue(OptionID id, OptionValue value)
     }
     return result;
   }
-  if (id == kOptionAnchoredKeys) {
-    std::string result;
-    for (int i = 0; i < 24; ++i) {
-      if ((value & (1 << i)) != 0) {
-        if (!result.empty())
-          result += ", ";
-        result += "F" + std::to_string(i + 1);
-      }
-    }
-    return result;
-  }
-
   return "";
 }
 
@@ -1662,6 +1722,32 @@ std::ostream &operator<<(std::ostream &s, const Config &config)
         if (name != NULL && !value.empty()) {
           s << "\t\t" << name << " = " << value << std::endl;
         }
+      }
+
+      UInt32 mask[8] = {0};
+      bool hasAnchoredKeys = false;
+      for (int i = 0; i < 8; ++i) {
+        auto it = options->find(kAnchoredKeysOptions[i]);
+        if (it != options->end()) {
+          mask[i] = static_cast<UInt32>(it->second);
+          if (mask[i] != 0)
+            hasAnchoredKeys = true;
+        }
+      }
+      if (hasAnchoredKeys) {
+        std::string keyList;
+        for (int vk = 0; vk < 256; ++vk) {
+          if (mask[vk / 32] & (1u << (vk % 32))) {
+            const char *name = lookupNameByVk(vk);
+            if (name != nullptr) {
+              if (!keyList.empty())
+                keyList += ", ";
+              keyList += name;
+            }
+          }
+        }
+        if (!keyList.empty())
+          s << "\t\t" << "anchoredKeys" << " = " << keyList << std::endl;
       }
     }
   }

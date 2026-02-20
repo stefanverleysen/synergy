@@ -21,6 +21,8 @@
 #include "deskflow/XScreen.h"
 #include "deskflow/protocol_types.h"
 
+#include <cstring>
+
 static const char *g_name = "dfwhook";
 
 static DWORD g_processID = 0;
@@ -45,7 +47,7 @@ static DWORD g_hookThread = 0;
 static bool g_fakeServerInput = false;
 static BOOL g_isPrimary = TRUE;
 static bool g_touchActivateScreen = false;
-static UInt32 g_anchoredKeysMask = 0;
+static UInt32 g_anchoredKeysMask[8] = {};
 
 MSWindowsHook::MSWindowsHook()
 {
@@ -160,9 +162,21 @@ void MSWindowsHook::setIsPrimary(bool primary)
   g_isPrimary = primary ? TRUE : FALSE;
 }
 
-void MSWindowsHook::setAnchoredKeys(UInt32 fKeyBitmask)
+void MSWindowsHook::setAnchoredKeys(const UInt32 mask[8])
 {
-  g_anchoredKeysMask = fKeyBitmask;
+  memcpy(g_anchoredKeysMask, mask, sizeof(g_anchoredKeysMask));
+}
+
+void MSWindowsHook::setAnchoredKeysFKeys(UInt32 fKeyBitmask)
+{
+  UInt32 mask[8] = {};
+  for (int i = 0; i < 24; ++i) {
+    if (fKeyBitmask & (1u << i)) {
+      int vk = VK_F1 + i;
+      mask[vk / 32] |= (1u << (vk % 32));
+    }
+  }
+  setAnchoredKeys(mask);
 }
 
 static void keyboardGetState(BYTE keys[256], DWORD vkCode, bool kf_up)
@@ -254,12 +268,10 @@ static bool keyboardHookHandler(WPARAM wParam, LPARAM lParam)
     return false;
   }
 
-  // bit N in the mask = F(N+1) is anchored
-  if (g_mode == kHOOK_RELAY_EVENTS && g_anchoredKeysMask != 0) {
-    int fKeyIndex = static_cast<int>(vkCode) - VK_F1;
-    if (fKeyIndex >= 0 && fKeyIndex < 24 && (g_anchoredKeysMask & (1 << fKeyIndex)) != 0) {
+  if (g_mode == kHOOK_RELAY_EVENTS) {
+    UInt32 vk = static_cast<UInt32>(vkCode);
+    if (vk < 256 && (g_anchoredKeysMask[vk / 32] & (1u << (vk % 32))) != 0)
       return false;
-    }
   }
 
   // VK_RSHIFT may be sent with an extended scan code but right shift

@@ -742,7 +742,7 @@
       <item>
        <widget class="QLineEdit" name="m_pLineEditAnchoredKeys">
         <property name="placeholderText">
-         <string>e.g. F13, F14, F15</string>
+         <string>e.g. F13, LeftCtrl, A, NumPad5</string>
         </property>
        </widget>
       </item>
