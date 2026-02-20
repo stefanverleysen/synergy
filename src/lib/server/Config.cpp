@@ -826,6 +826,37 @@ void Config::readSectionScreens(ConfigReadContext &s)
         addOption(screen, kOptionScreenSwitchCornerSize, s.parseInt(value));
       } else if (name == "preserveFocus") {
         addOption(screen, kOptionScreenPreserveFocus, s.parseBoolean(value));
+      } else if (name == "anchoredKeys") {
+        OptionValue mask = 0;
+        String::size_type pos = 0;
+        while (pos < value.size()) {
+          String::size_type comma = value.find(',', pos);
+          if (comma == String::npos)
+            comma = value.size();
+          String key = value.substr(pos, comma - pos);
+          String::size_type start = key.find_first_not_of(" \t");
+          String::size_type end = key.find_last_not_of(" \t");
+          if (start != String::npos) {
+            key = key.substr(start, end - start + 1);
+            if (key.size() >= 2 && (key[0] == 'F' || key[0] == 'f')) {
+              const char *numStr = key.c_str() + 1;
+              char *numEnd = nullptr;
+              long n = strtol(numStr, &numEnd, 10);
+              if (*numEnd != '\0' || numEnd == numStr) {
+                throw XConfigRead(s, "anchoredKeys: invalid key name \"%{1}\"", key);
+              }
+              if (n >= 1 && n <= 24) {
+                mask |= (1 << (n - 1));
+              } else {
+                throw XConfigRead(s, "anchoredKeys: F-key out of range (1-24)");
+              }
+            } else {
+              throw XConfigRead(s, "anchoredKeys: expected F-key name like F13");
+            }
+          }
+          pos = comma + 1;
+        }
+        addOption(screen, kOptionAnchoredKeys, mask);
       } else {
         // unknown argument
         throw XConfigRead(s, "unknown argument \"%{1}\"", name);
@@ -1270,6 +1301,9 @@ const char *Config::getOptionName(OptionID id)
   if (id == kOptionClipboardSharingSize) {
     return "clipboardSharingSize";
   }
+  if (id == kOptionAnchoredKeys) {
+    return "anchoredKeys";
+  }
   return NULL;
 }
 
@@ -1324,6 +1358,17 @@ String Config::getOptionValue(OptionID id, OptionValue value)
     }
     if ((value & kBottomRightMask) != 0) {
       result += " +bottom-right";
+    }
+    return result;
+  }
+  if (id == kOptionAnchoredKeys) {
+    std::string result;
+    for (int i = 0; i < 24; ++i) {
+      if ((value & (1 << i)) != 0) {
+        if (!result.empty())
+          result += ", ";
+        result += "F" + std::to_string(i + 1);
+      }
     }
     return result;
   }

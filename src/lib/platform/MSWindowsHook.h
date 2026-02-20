@@ -53,4 +53,6 @@ public:
   void setTouchActivateScreen(bool enabled);
 
   void setIsPrimary(bool primary);
+
+  void setAnchoredKeys(UInt32 fKeyBitmask);
 };

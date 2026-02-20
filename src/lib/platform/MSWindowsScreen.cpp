@@ -488,6 +488,10 @@ void MSWindowsScreen::setOptions(const OptionsList &options)
       m_touchActivateScreen = (options[i + 1] != 0);
       m_hook.setTouchActivateScreen(m_touchActivateScreen);
       LOG((CLOG_DEBUG "touch activate screen set to %s", m_touchActivateScreen ? "true" : "false"));
+    } else if (options[i] == kOptionAnchoredKeys) {
+      UInt32 mask = static_cast<UInt32>(options[i + 1]);
+      m_hook.setAnchoredKeys(mask);
+      LOG((CLOG_DEBUG "anchored keys mask set to 0x%06x", mask));
     }
   }
 }

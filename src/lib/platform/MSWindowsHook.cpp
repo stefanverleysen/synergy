@@ -45,6 +45,7 @@ static DWORD g_hookThread = 0;
 static bool g_fakeServerInput = false;
 static BOOL g_isPrimary = TRUE;
 static bool g_touchActivateScreen = false;
+static UInt32 g_anchoredKeysMask = 0;
 
 MSWindowsHook::MSWindowsHook()
 {
@@ -159,6 +160,11 @@ void MSWindowsHook::setIsPrimary(bool primary)
   g_isPrimary = primary ? TRUE : FALSE;
 }
 
+void MSWindowsHook::setAnchoredKeys(UInt32 fKeyBitmask)
+{
+  g_anchoredKeysMask = fKeyBitmask;
+}
+
 static void keyboardGetState(BYTE keys[256], DWORD vkCode, bool kf_up)
 {
   // we have to use GetAsyncKeyState() rather than GetKeyState() because
@@ -246,6 +252,14 @@ static bool keyboardHookHandler(WPARAM wParam, LPARAM lParam)
   if (g_fakeServerInput) {
     PostThreadMessage(g_threadID, DESKFLOW_MSG_DEBUG, 0xfe000000u | wParam, lParam);
     return false;
+  }
+
+  // bit N in the mask = F(N+1) is anchored
+  if (g_mode == kHOOK_RELAY_EVENTS && g_anchoredKeysMask != 0) {
+    int fKeyIndex = static_cast<int>(vkCode) - VK_F1;
+    if (fKeyIndex >= 0 && fKeyIndex < 24 && (g_anchoredKeysMask & (1 << fKeyIndex)) != 0) {
+      return false;
+    }
   }
 
   // VK_RSHIFT may be sent with an extended scan code but right shift
