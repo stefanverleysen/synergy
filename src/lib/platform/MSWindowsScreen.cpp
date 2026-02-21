@@ -149,6 +149,10 @@ MSWindowsScreen::MSWindowsScreen(
     updateScreenShape();
     m_class = createWindowClass();
     m_window = createWindow(m_class, DESKFLOW_APP_NAME);
+    m_powerNotify = RegisterSuspendResumeNotification(m_window, DEVICE_NOTIFY_WINDOW_HANDLE);
+    if (m_powerNotify == NULL) {
+      LOG((CLOG_WARN "failed to register for suspend/resume notifications: %d", GetLastError()));
+    }
     setupMouseKeys();
     LOG((CLOG_DEBUG "screen shape: %d,%d %dx%d %s", m_x, m_y, m_w, m_h, m_multimon ? "(multi-monitor)" : ""));
     LOG((CLOG_DEBUG "window is 0x%08x", m_window));
@@ -197,6 +201,9 @@ MSWindowsScreen::~MSWindowsScreen()
   disable();
   m_events->adoptBuffer(NULL);
   m_events->removeHandler(Event::kSystem, m_events->getSystemTarget());
+  if (m_powerNotify != NULL) {
+    UnregisterSuspendResumeNotification(m_powerNotify);
+  }
   delete m_keyState;
   delete m_desks;
   delete m_screensaver;
@@ -1043,21 +1050,17 @@ bool MSWindowsScreen::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LRES
   case WM_DISPLAYCHANGE:
     return onDisplayChange();
 
-  /* On windows 10 we don't receive WM_POWERBROADCAST after sleep.
-   We receive only WM_TIMECHANGE hence this message is used to resume.*/
-  case WM_TIMECHANGE:
-    m_events->addEvent(Event(m_events->forIScreen().resume(), getEventTarget(), NULL, Event::kDeliverImmediately));
-    break;
-
   case WM_POWERBROADCAST:
     switch (wParam) {
     case PBT_APMRESUMEAUTOMATIC:
     case PBT_APMRESUMECRITICAL:
     case PBT_APMRESUMESUSPEND:
+      LOG((CLOG_INFO "system resume detected (wParam=0x%04x)", wParam));
       m_events->addEvent(Event(m_events->forIScreen().resume(), getEventTarget(), NULL, Event::kDeliverImmediately));
       break;
 
     case PBT_APMSUSPEND:
+      LOG((CLOG_INFO "system suspend detected"));
       m_events->addEvent(Event(m_events->forIScreen().suspend(), getEventTarget(), NULL, Event::kDeliverImmediately));
       break;
     }

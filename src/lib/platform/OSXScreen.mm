@@ -1830,7 +1830,8 @@ CGEventRef OSXScreen::handleCGInputEvent(CGEventTapProxy proxy, CGEventType type
     LOG((CLOG_INFO "quartz event tap was disabled by timeout, re-enabling"));
     break;
   case kCGEventTapDisabledByUserInput:
-    LOG((CLOG_ERR "quartz event tap was disabled by user input"));
+    CGEventTapEnable(screen->m_eventTapPort, true);
+    LOG((CLOG_INFO "quartz event tap was disabled by user input, re-enabling"));
     break;
   case NX_NULLEVENT:
     break;

@@ -316,6 +316,7 @@ private:
   // clipboard stuff.  our window is used mainly as a clipboard
   // owner and as a link in the clipboard viewer chain.
   HWND m_window;
+  HPOWERNOTIFY m_powerNotify;
   HWND m_nextClipboardWindow;
   bool m_ownClipboard;
 
