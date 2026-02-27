@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Touch Activates Screen — Dev Team Briefing</title>
+<style>
+  @page { margin: 1in; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+  h1 {
+    font-size: 22px;
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+  }
+  h2 {
+    font-size: 17px;
+    color: #1e40af;
+    margin-top: 30px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+  }
+  h3 {
+    font-size: 14px;
+    color: #374151;
+    margin-top: 18px;
+    margin-bottom: 6px;
+  }
+  .meta {
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 25px;
+  }
+  .meta strong { color: #374151; }
+  .alert-box {
+    background: #fef2f2;
+    border: 2px solid #dc2626;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .alert-box h2 {
+    color: #dc2626;
+    border: none;
+    margin-top: 0;
+    padding: 0;
+    font-size: 16px;
+  }
+  .action-box {
+    background: #eff6ff;
+    border: 2px solid #2563eb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .action-box h2 {
+    color: #2563eb;
+    border: none;
+    margin-top: 0;
+    padding: 0;
+    font-size: 16px;
+  }
+  ol.steps {
+    margin: 10px 0;
+    padding-left: 24px;
+  }
+  ol.steps li {
+    margin-bottom: 6px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th {
+    background: #f3f4f6;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    font-weight: 600;
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+  }
+  .tag-regression {
+    display: inline-block;
+    background: #dc2626;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .tag-preexisting {
+    display: inline-block;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12.5px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 14px 18px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  pre .comment { color: #64748b; }
+  pre .highlight { background: #dc262640; display: inline; }
+  .suspect {
+    background: #fff7ed;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .suspect h3 { margin-top: 0; color: #92400e; }
+  .footer {
+    margin-top: 40px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+    color: #9ca3af;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Touch Activates Screen — Dev Team Briefing</h1>
+<div class="meta">
+  <strong>PR:</strong> <a href="https://github.com/symless/synergy/pull/147">#147 — feat(windows): touch activates screen</a><br>
+  <strong>Branch:</strong> <code>feat/touch-activates-screen</code><br>
+  <strong>Customer Reporter:</strong> Abel Lin (Feb 26, 2026)<br>
+  <strong>Date:</strong> Feb 27, 2026
+</div>
+
+<!-- ============================================================ -->
+<div class="alert-box">
+<h2>IMMEDIATE ACTION: Windows Touch Calibration Required</h2>
+<p><strong>Before any further code debugging</strong>, all test machines need the Windows touchscreen calibration wizard:</p>
+<ol class="steps">
+  <li>Open <strong>Control Panel &rarr; Tablet PC Settings</strong></li>
+  <li>Click <strong>Setup</strong> (under the Display tab)</li>
+  <li>Follow the wizard &mdash; tap each touchscreen when prompted to identify which physical display it maps to</li>
+  <li><strong>Repeat for every machine</strong> in the test setup (server and all clients)</li>
+</ol>
+<p><strong>Why:</strong> Without calibration, Windows can map touch coordinates to the wrong monitor in multi-display setups. Synergy receives coordinates that don&rsquo;t match any configured neighbor screen, so the switch silently fails. Stefan confirmed that running this wizard <strong>significantly improved touch-to-switch success rates</strong>.</p>
+<p>This is likely the <strong>primary cause</strong> of the ~20% success rate on server&harr;client touches.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>Customer Feedback Summary</h2>
+
+<table>
+  <tr>
+    <th>Scenario</th>
+    <th>Build 2 (<code>3fab44b</code>)</th>
+    <th>Build 3 (<code>9d05f96</code>)</th>
+    <th>Status</th>
+  </tr>
+  <tr>
+    <td>Server &harr; Client touch</td>
+    <td>~20% success</td>
+    <td>~20% success</td>
+    <td><span class="tag-preexisting">Pre-existing</span></td>
+  </tr>
+  <tr>
+    <td>Client &harr; Client touch</td>
+    <td>Working fine</td>
+    <td><strong>Completely broken</strong></td>
+    <td><span class="tag-regression">Regression</span></td>
+  </tr>
+</table>
+
+<p><em>&ldquo;Third build not as good as 2nd&rdquo;</em> &mdash; Abel Lin</p>
+
+<!-- ============================================================ -->
+<h2>Build History</h2>
+
+<table>
+  <tr><th>Build</th><th>Commit</th><th>Date</th><th>Description</th></tr>
+  <tr><td>1st</td><td><code>78334da</code></td><td>Feb 11</td><td>Initial implementation &mdash; 3 detection paths, cursor hiding, 500ms cooldown</td></tr>
+  <tr><td>2nd</td><td><code>3fab44b</code></td><td>Feb 17</td><td>PR review round 2 &mdash; renamed grabScreen&rarr;grabInput, removed Win7/8 guards</td></tr>
+  <tr><td>3rd</td><td><code>9d05f96</code></td><td>Feb 20</td><td>&ldquo;Fix touch click bugs on secondary screens&rdquo; &mdash; <strong>introduced regression</strong></td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="tag-regression">Regression</span> Build 3: Client-to-Client Broken</h2>
+
+<p>Commit <code>9d05f96</code> introduced 3 changes that broke client-to-client touch switching:</p>
+
+<div class="suspect">
+<h3>Suspect 1: Hider Window Blocks All Client Touch Input</h3>
+<p><strong>File:</strong> <code>MSWindowsDesks.cpp:442-448</code></p>
+<p>Build 3 added a <code>TOUCH_SIGNATURE</code> check that prevents the hider window from auto-hiding on touch-generated mouse moves. The hider stays on top, intercepting all input &mdash; <code>WindowFromPoint()</code> returns the hider instead of the real app window underneath.</p>
+<pre>case WM_MOUSEMOVE: {
+<span class="highlight">  LPARAM extraInfo = GetMessageExtraInfo();
+  if ((extraInfo &amp; TOUCH_SIGNATURE_MASK) == TOUCH_SIGNATURE)
+    break;  <span class="comment">// hider stays visible &mdash; blocks everything</span></span>
+  <span class="comment">// ... existing auto-hide code never reached</span>
+}</pre>
+</div>
+
+<div class="suspect">
+<h3>Suspect 2: Hook Relay-Mode Gate Change</h3>
+<p><strong>File:</strong> <code>MSWindowsHook.cpp:599-609</code></p>
+<p>Changed touch event consumption from <code>if (g_isPrimary)</code> to <code>if (g_isPrimary &amp;&amp; g_mode == kHOOK_RELAY_EVENTS)</code>. Need to verify that <code>DESKFLOW_MSG_TOUCH</code> posted by the hook on clients has a consumer that isn&rsquo;t gated by <code>m_isPrimary</code>.</p>
+<pre><span class="comment">// BUILD 2 (working):</span>
+if (g_isPrimary) {
+  return 1;
+}
+
+<span class="comment">// BUILD 3 (broken):</span>
+<span class="highlight">if (g_isPrimary &amp;&amp; g_mode == kHOOK_RELAY_EVENTS) {</span>
+  return 1;
+}</pre>
+</div>
+
+<div class="suspect">
+<h3>Suspect 3: Early Return Skips Activation</h3>
+<p><strong>File:</strong> <code>MSWindowsScreen.cpp:1980-1984</code></p>
+<p>Added early return when the target window is already foreground &mdash; skips the click replay that triggers cross-machine focus switching.</p>
+<pre><span class="highlight">if (foreground == root) {
+  return;  <span class="comment">// skips entire activation + click replay</span>
+}</span></pre>
+</div>
+
+<div class="action-box">
+<h2>Quick Fix: Revert <code>9d05f96</code></h2>
+<p>Reverting this single commit restores Build 2 behavior where client-to-client touch was working:</p>
+<pre>git revert 9d05f96</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="tag-preexisting">Pre-existing</span> ~20% Server&harr;Client Success Rate</h2>
+
+<p>Beyond the calibration wizard issue, there are code-level timing gates that compound to drop ~80% of touches:</p>
+
+<h3>Issue 1: <code>m_isOnScreen</code> gate drops touch events during transitions</h3>
+<p><strong>Files:</strong> <code>MSWindowsScreen.cpp:976</code> and <code>:1472</code></p>
+<p>Both <code>DESKFLOW_MSG_TOUCH</code> and <code>onPointerInput</code> handlers check <code>if (m_isOnScreen) return</code>. Touch events during the brief <code>enter()</code>/<code>leave()</code> state transitions get silently swallowed. Estimated drop: <strong>~50%</strong>.</p>
+<pre>case DESKFLOW_MSG_TOUCH:
+<span class="highlight">  if (!m_touchActivateScreen || m_isOnScreen)
+    return true;  <span class="comment">// silently swallowed</span></span></pre>
+
+<h3>Issue 2: 500ms server cooldown blocks rapid touches</h3>
+<p><strong>File:</strong> <code>Server.cpp:785-789</code>, constant: <code>Server.h:489</code></p>
+<p><code>kTouchSwitchCooldownTime = 0.5s</code> blocks ALL screen transitions for 500ms after each touch switch. Additionally, the <code>Stopwatch</code> starts at time 0, so the <strong>first touch after startup is also blocked</strong>. Estimated drop: <strong>~50% of remainder</strong>.</p>
+<pre>double elapsedTouchCooldown = m_touchSwitchCooldown.getTime();
+<span class="highlight">if (elapsedTouchCooldown &gt; 0.0 &amp;&amp; elapsedTouchCooldown &lt; 0.5) {
+  return false;  <span class="comment">// blocked for 500ms</span>
+}</span></pre>
+
+<h3>Issue 3: 150ms debounce at screen level</h3>
+<p><strong>File:</strong> <code>MSWindowsScreen.h:368</code></p>
+<p><code>kTouchDebounceTime = 0.15s</code> &mdash; additional filtering before events reach the server. Combined with the 500ms cooldown, effective minimum touch interval is 500ms.</p>
+
+<h3>Issue 4: <code>GetCursorPos()</code> returns wrong position on clients</h3>
+<p><strong>File:</strong> <code>MSWindowsDesks.cpp:744</code></p>
+<p>On clients, the cursor is parked off-screen. <code>GetCursorPos()</code> returns that parked position, <strong>not the actual touch point</strong>. Coordinates sent to the server are wrong. Flagged in PR review by Copilot, not yet fixed.</p>
+
+<h3>Combined math: 0.5 &times; 0.5 &asymp; 25% &mdash; matches Abel&rsquo;s ~20% report</h3>
+
+<!-- ============================================================ -->
+<h2>Files Reference</h2>
+
+<table>
+  <tr><th>File</th><th>What to look at</th></tr>
+  <tr><td><code>src/lib/platform/MSWindowsDesks.cpp</code></td><td>Hider window touch bypass (442-448), raw input primary gate (736-738), foreground save (646)</td></tr>
+  <tr><td><code>src/lib/platform/MSWindowsHook.cpp</code></td><td>LL hook touch detection + relay-mode gate (596-609)</td></tr>
+  <tr><td><code>src/lib/platform/MSWindowsScreen.cpp</code></td><td>DESKFLOW_MSG_TOUCH handler (975-993), WM_POINTER handler (1465-1492), activateWindowAt (1965-2008)</td></tr>
+  <tr><td><code>src/lib/server/Server.cpp</code></td><td>handleTouchActivatedPrimaryEvent (1353-1381), handleGrabInputEvent (1387-1408), cooldown in isSwitchOkay (785-789)</td></tr>
+  <tr><td><code>src/lib/server/Server.h</code></td><td>kTouchSwitchCooldownTime constant (489)</td></tr>
+  <tr><td><code>src/lib/platform/MSWindowsScreen.h</code></td><td>kTouchDebounceTime constant (368)</td></tr>
+  <tr><td><code>src/lib/platform/dfwhook.h</code></td><td>Shared TOUCH_SIGNATURE defines (49-53)</td></tr>
+</table>
+
+<div class="footer">
+  Generated Feb 27, 2026 &bull; PR #147 regression analysis &bull; Synergy touch-activates-screen feature
+</div>
+
+</body>
+</html>
