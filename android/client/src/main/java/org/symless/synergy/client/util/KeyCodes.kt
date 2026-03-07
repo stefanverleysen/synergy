@@ -45,16 +45,33 @@ object Keyboard {
     Hanja(0xEF34),            /* Hanja */
     Delete(0xEFFF),           /* Delete, rubout */
 
+    PrintScreen(0xEF61),
+    Insert(0xEF63),
+
     // cursor control
     Home(0xEF50),
     Left(0xEF51),  /* Move left, left arrow */
     Up(0xEF52),    /* Move up, up arrow */
     Right(0xEF53), /* Move right, right arrow */
     Down(0xEF54),  /* Move down, down arrow */
-    PageUp(0xEF55, "\u001B[5~"), /* Page Up */
-    PageDown(0xEF56, "\u001B[6~"), /* Page Down */
+    PageUp(0xEF55),
+    PageDown(0xEF56),
     End(0xEF57),   /* EOL */
     Begin(0xEF58), /* BOL */
+
+    // function keys
+    F1(0xEFBE),
+    F2(0xEFBF),
+    F3(0xEFC0),
+    F4(0xEFC1),
+    F5(0xEFC2),
+    F6(0xEFC3),
+    F7(0xEFC4),
+    F8(0xEFC5),
+    F9(0xEFC6),
+    F10(0xEFC7),
+    F11(0xEFC8),
+    F12(0xEFC9),
 
     // media keys
     Mute(0xE0AD),           /* Mute toggle */

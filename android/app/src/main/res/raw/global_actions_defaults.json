@@ -179,5 +179,77 @@
       "MediaPrevious"
     ],
     "ignoreIME": true
+  },
+  {
+    "actionId": 201,
+    "label": "F1",
+    "defaultShortcutKeys": ["F1"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 202,
+    "label": "F2",
+    "defaultShortcutKeys": ["F2"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 203,
+    "label": "F3",
+    "defaultShortcutKeys": ["F3"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 204,
+    "label": "F4",
+    "defaultShortcutKeys": ["F4"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 205,
+    "label": "F5",
+    "defaultShortcutKeys": ["F5"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 206,
+    "label": "F6",
+    "defaultShortcutKeys": ["F6"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 207,
+    "label": "F7",
+    "defaultShortcutKeys": ["F7"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 208,
+    "label": "F8",
+    "defaultShortcutKeys": ["F8"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 209,
+    "label": "F9",
+    "defaultShortcutKeys": ["F9"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 210,
+    "label": "F10",
+    "defaultShortcutKeys": ["F10"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 211,
+    "label": "F11",
+    "defaultShortcutKeys": ["F11"],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 212,
+    "label": "F12",
+    "defaultShortcutKeys": ["F12"],
+    "ignoreIME": true
   }
 ]

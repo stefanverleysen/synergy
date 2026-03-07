@@ -28,7 +28,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import org.symless.synergy.services.ConnectionService
-import org.symless.synergy.services.GlobalInputService
 
 
 class BootReceiver : BroadcastReceiver() {
@@ -37,9 +36,7 @@ class BootReceiver : BroadcastReceiver() {
         if (ctx == null)
             return
         if (Intent.ACTION_BOOT_COMPLETED == intent!!.action) {
-
-            ctx.startService(Intent(ctx, ConnectionService::class.java))
-            ctx.startService(Intent(ctx, GlobalInputService::class.java))
+            ctx.startForegroundService(Intent(ctx, ConnectionService::class.java))
         }
     }
 }

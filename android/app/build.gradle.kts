@@ -32,8 +32,6 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.protobuf)
-  alias(libs.plugins.hilt)
-  alias(libs.plugins.ksp)
 }
 
 protobuf {
@@ -130,7 +128,6 @@ android {
 
   sourceSets { getByName("main") { proto { srcDir("src/main/proto") } } }
 
-  lint { disable.add("NullSafeMutableLiveData") }
 }
 
 dependencies {
@@ -148,11 +145,6 @@ dependencies {
 
   implementation(libs.protobuf.kotlin)
 
-  ksp(libs.hilt.compiler)
-  kspTest(libs.hilt.compiler)
-  implementation(libs.hilt.core)
-  implementation(libs.hilt.android)
-
   implementation(libs.google.accompanist.permissions)
 
   implementation(libs.androidx.core.ktx)
@@ -161,14 +153,9 @@ dependencies {
   implementation(libs.androidx.lifecycle.runtime.android)
   implementation(libs.androidx.lifecycle.runtime.normal)
   implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(libs.androidx.lifecycle.livedata.ktx)
-  implementation(libs.androidx.lifecycle.livedata.normal)
-  implementation(libs.androidx.lifecycle.livedata.core.normal)
-  implementation(libs.androidx.lifecycle.livedata.core.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.normal)
   implementation(libs.androidx.lifecycle.viewmodel.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
-  implementation(libs.androidx.hilt.navigation.compose)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.lifecycle.service)
@@ -181,7 +168,6 @@ dependencies {
   implementation(libs.androidx.material3)
 
   implementation(libs.material)
-  implementation(libs.androidx.constraintlayout)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.test.core)

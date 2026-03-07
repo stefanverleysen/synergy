@@ -304,9 +304,9 @@ class GlobalInputService : AccessibilityService() {
         log.info { "Mouse pointer is visible, checking if display change requires pointer relocation" }
         // Hide and re-show to trigger display detection
         hideMousePointer()
-        Handler(Looper.getMainLooper()).postDelayed({
+        Handler(Looper.getMainLooper()).post {
           showMousePointer()
-        }, 100)
+        }
       }
     }
 
@@ -325,9 +325,9 @@ class GlobalInputService : AccessibilityService() {
         log.info { "Mouse pointer is visible, checking if display change requires pointer relocation" }
         // Hide and re-show to trigger display detection
         hideMousePointer()
-        Handler(Looper.getMainLooper()).postDelayed({
+        Handler(Looper.getMainLooper()).post {
           showMousePointer()
-        }, 100)
+        }
       }
     }
 
@@ -905,6 +905,22 @@ class GlobalInputService : AccessibilityService() {
   }
 
   /**
+   * Dispatch a complete long-press gesture (single finger held 600ms) to trigger context menus.
+   * The gesture runs to completion on its own; button UP for the right-click is ignored.
+   */
+  private fun dispatchLongPress(x: Float, y: Float) {
+    log.info { "Long-press gesture at [$x, $y]" }
+
+    val path = Path().apply { moveTo(x, y) }
+    val gesture =
+      GestureDescription.Builder()
+        .setDisplayId(activeDisplayId)
+        .addStroke(StrokeDescription(path, 0, 600))
+        .build()
+    dispatchGesture(gesture, gestureResultCallback, globalInputHandler)
+  }
+
+  /**
    * Start a speculative hold gesture that can be converted to a drag.
    * This provides immediate tactile feedback when the mouse button is pressed.
    * The gesture completes immediately (due to willContinue=true), but the drag state
@@ -1313,9 +1329,9 @@ class GlobalInputService : AccessibilityService() {
           startSpeculativeHold(mousePointerLayout.x.toFloat(), mousePointerLayout.y.toFloat(), 3)
         }
 
-        // For right button (id=3), start a 2-finger speculative hold gesture immediately
+        // For right button (id=3), dispatch a long-press gesture to trigger context menus
         if (event.id.toInt() == 3) {
-          startSpeculativeHold(mousePointerLayout.x.toFloat(), mousePointerLayout.y.toFloat(), 2)
+          dispatchLongPress(mousePointerLayout.x.toFloat(), mousePointerLayout.y.toFloat())
         }
       }
 
@@ -1327,6 +1343,12 @@ class GlobalInputService : AccessibilityService() {
         val currentY = mousePointerLayout.y.toFloat()
 
         log.debug { "Mouse button up: id=$buttonId, pos=[$currentX, $currentY]" }
+
+        // Right-click long-press is a self-completing gesture; nothing to do on UP
+        if (buttonId == 3) {
+          mouseButtonDown = null
+          return
+        }
 
         // Check if we have an active drag gesture
         val dragState = activeDragState
@@ -1407,7 +1429,13 @@ class GlobalInputService : AccessibilityService() {
           }
         } else {
           // Normal scrolling without Control key
-          scrollSwipe(up = scrollUp)
+          scrollSwipe(up = scrollUp, delta = abs(event.y))
+
+          // Horizontal scroll
+          if (abs(event.x) > 30) {
+            val scrollLeft = event.x < 0
+            horizontalScrollSwipe(left = scrollLeft, delta = abs(event.x))
+          }
         }
       }
     }
@@ -1533,8 +1561,9 @@ class GlobalInputService : AccessibilityService() {
    * This creates a small vertical swipe to simulate scrolling.
    *
    * @param up true to scroll up (swipe down gesture), false to scroll down (swipe up gesture)
+   * @param delta raw wheel delta from Synergy (120 per standard notch)
    */
-  private fun scrollSwipe(up: Boolean = false) {
+  private fun scrollSwipe(up: Boolean = false, delta: Int = 120) {
     if (globalInputPending) {
       log.debug { "Scroll ignored - gesture already pending" }
       return
@@ -1549,8 +1578,9 @@ class GlobalInputService : AccessibilityService() {
     val swipeX = mousePointerLayout.x.toFloat()
     val currentY = mousePointerLayout.y.toFloat()
 
-    // Calculate scroll distance - use 20% of screen height for balanced scrolling
-    val scrollDistance = screenHeight * 0.20f
+    // Scale distance proportionally: ~5% of screen height per standard notch (120 units)
+    val rawDistance = screenHeight * (delta.toFloat() / 120f) * 0.05f
+    val scrollDistance = rawDistance.coerceIn(screenHeight * 0.02f, screenHeight * 0.25f)
 
     val (startY, endY) = when {
       // On home screen, wheel UP should pull up app drawer from bottom
@@ -1597,6 +1627,56 @@ class GlobalInputService : AccessibilityService() {
 
     log.debug {
       "Scroll swipe: up=$up, homeScreen=$isHomeScreenActive, x=$swipeX, startY=$clampedStartY, endY=$clampedEndY, distance=${abs(clampedEndY - clampedStartY)}"
+    }
+
+    dispatchGesture(gesture, gestureResultCallback, globalInputHandler)
+  }
+
+  /**
+   * Perform a horizontal scroll swipe gesture at the mouse pointer location.
+   *
+   * @param left true to scroll left, false to scroll right
+   * @param delta raw horizontal wheel delta from Synergy (120 per standard notch)
+   */
+  private fun horizontalScrollSwipe(left: Boolean, delta: Int = 120) {
+    if (globalInputPending) {
+      log.debug { "Horizontal scroll ignored - gesture already pending" }
+      return
+    }
+
+    globalInputPending = true
+
+    val screenSize = getScreenSize(activeDisplayId)
+    val screenWidth = screenSize.px.width.toFloat()
+
+    val swipeY = mousePointerLayout.y.toFloat()
+    val currentX = mousePointerLayout.x.toFloat()
+
+    val rawDistance = screenWidth * (delta.toFloat() / 120f) * 0.05f
+    val scrollDistance = rawDistance.coerceIn(screenWidth * 0.02f, screenWidth * 0.25f)
+
+    val (startX, endX) = if (left) {
+      Pair(currentX + scrollDistance / 2, currentX - scrollDistance / 2)
+    } else {
+      Pair(currentX - scrollDistance / 2, currentX + scrollDistance / 2)
+    }
+
+    val clampedStartX = startX.coerceIn(0f, screenWidth)
+    val clampedEndX = endX.coerceIn(0f, screenWidth)
+
+    val path = Path().apply {
+      moveTo(clampedEndX, swipeY)
+      lineTo(clampedStartX, swipeY)
+    }
+
+    val stroke = StrokeDescription(path, 0, 150)
+    val gesture = GestureDescription.Builder()
+      .setDisplayId(activeDisplayId)
+      .addStroke(stroke)
+      .build()
+
+    log.debug {
+      "Horizontal scroll swipe: left=$left, y=$swipeY, startX=$clampedStartX, endX=$clampedEndX, distance=${abs(clampedEndX - clampedStartX)}"
     }
 
     dispatchGesture(gesture, gestureResultCallback, globalInputHandler)

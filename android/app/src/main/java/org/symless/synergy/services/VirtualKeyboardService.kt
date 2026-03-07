@@ -551,15 +551,29 @@ class VirtualKeyboardService : InputMethodService() {
         val action =
           keyboardActions.entries.find { it.value.specialKey == specialKey }
         if (action == null) {
-          // No action registered for this special key
-          // Only apply fallback if the special key has imeText defined
-          if (specialKey.imeText != null) {
-            log.debug { "Special key detected with imeText: $specialKey" }
-            applyCommand(specialKey.imeText, ic, et)
-          } else {
-            log.warn { "No action registered for special key without imeText: $specialKey - ignoring" }
+          when (specialKey) {
+            // GlobalInputService handles Escape as GLOBAL_ACTION_BACK
+            Keyboard.SpecialKey.Escape -> return
+
+            Keyboard.SpecialKey.Tab -> {
+              if (mods.isShift) {
+                ic.performEditorAction(EditorInfo.IME_ACTION_PREVIOUS)
+              } else {
+                ic.performEditorAction(EditorInfo.IME_ACTION_NEXT)
+              }
+              return
+            }
+
+            else -> {
+              if (specialKey.imeText != null) {
+                log.debug { "Special key detected with imeText: $specialKey" }
+                applyCommand(specialKey.imeText, ic, et)
+              } else {
+                log.warn { "No action registered for special key: $specialKey" }
+              }
+              return
+            }
           }
-          return
         }
 
         log.debug { "Invoking action: ${action.key}" }

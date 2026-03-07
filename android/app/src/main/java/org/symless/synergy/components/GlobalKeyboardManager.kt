@@ -191,6 +191,16 @@ open class GlobalKeyboardManager(
     }
   }
 
+  private fun dispatchKeyEvent(keyCode: Int) {
+    try {
+      val inst = android.app.Instrumentation()
+      inst.sendKeyDownUpSync(keyCode)
+      log.debug { "Dispatched key event: $keyCode" }
+    } catch (e: Exception) {
+      log.error(e) { "Failed to dispatch key event: ${e.message}" }
+    }
+  }
+
   companion object {
     internal val log = KLoggingManager.logger(GlobalKeyboardManager::class)
 
@@ -276,6 +286,18 @@ open class GlobalKeyboardManager(
               106 -> { _ -> // Media Previous
                 manager?.dispatchMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
               }
+              201 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F1) }
+              202 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F2) }
+              203 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F3) }
+              204 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F4) }
+              205 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F5) }
+              206 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F6) }
+              207 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F7) }
+              208 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F8) }
+              209 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F9) }
+              210 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F10) }
+              211 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F11) }
+              212 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F12) }
               else -> { _ -> } // No execute function for other actions
             }
 

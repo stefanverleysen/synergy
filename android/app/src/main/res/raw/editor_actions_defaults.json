@@ -93,5 +93,35 @@
     "defaultShortcutKeys": [
       "Return"
     ]
+  },
+  {
+    "actionId": 14,
+    "label": "Cursor Up",
+    "specialKey": "Up"
+  },
+  {
+    "actionId": 15,
+    "label": "Cursor Down",
+    "specialKey": "Down"
+  },
+  {
+    "actionId": 16,
+    "label": "Home",
+    "specialKey": "Home"
+  },
+  {
+    "actionId": 17,
+    "label": "End",
+    "specialKey": "End"
+  },
+  {
+    "actionId": 18,
+    "label": "Page Up",
+    "specialKey": "PageUp"
+  },
+  {
+    "actionId": 19,
+    "label": "Page Down",
+    "specialKey": "PageDown"
   }
 ]

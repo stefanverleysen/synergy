@@ -35,7 +35,7 @@ import org.symless.synergy.client.util.logging.KLoggingManager
  * and automatically released 5 seconds after acquisition by Android.
  *
  * The wakelock uses the following flags:
- * - FULL_WAKE_LOCK: Keeps both CPU and screen on
+ * - SCREEN_BRIGHT_WAKE_LOCK: Keeps both CPU and screen on
  * - ACQUIRE_CAUSES_WAKEUP: Immediately wakes up the device
  * - ON_AFTER_RELEASE: Pokes Android's user activity timer so the screen stays on
  *
@@ -62,7 +62,7 @@ class ScreenWakelockManager(
     try {
       // Create wakelock if not already created
       if (wakelock == null) {
-        val lockLevel = PowerManager.FULL_WAKE_LOCK or
+        val lockLevel = PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
           PowerManager.ACQUIRE_CAUSES_WAKEUP or
           PowerManager.ON_AFTER_RELEASE
         wakelock = powerManager.newWakeLock(lockLevel, "synergy:input_activity")

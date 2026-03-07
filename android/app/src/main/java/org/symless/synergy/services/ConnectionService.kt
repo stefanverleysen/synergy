@@ -24,7 +24,12 @@
 
 package org.symless.synergy.services
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -45,6 +50,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.symless.synergy.R
 import org.symless.synergy.BuildConfig
 import org.symless.synergy.client.Client
 import org.symless.synergy.client.ClientEventBus
@@ -78,11 +84,14 @@ import org.symless.synergy.ext.toServerTarget
 import org.symless.synergy.logging.AndroidForwardingLogger
 import org.symless.synergy.logging.LogRecordEvent
 import org.symless.synergy.receivers.ScreenStateReceiver
+import org.symless.synergy.ui.activities.RootActivity
 import org.symless.synergy.ui.models.FingerprintVerificationState
 
 class ConnectionService : Service() {
   companion object {
     private val log = KLoggingManager.forwardingLogger<ConnectionService>()
+    private const val NOTIFICATION_CHANNEL_ID = "synergy_connection"
+    private const val NOTIFICATION_ID = 1
   }
 
   private var connectionStateUpdateJob: Job? = null
@@ -655,6 +664,7 @@ class ConnectionService : Service() {
       }
 
       checkEnabled()
+      updateNotification(state)
       sendToClients { onStateChanged(state) }
 
       // Only set target if client exists and is enabled
@@ -707,6 +717,42 @@ class ConnectionService : Service() {
     connectionStateModel.updateScreenFromAppPrefs(appPrefs)
   }
 
+  private fun createNotificationChannel() {
+    val channel = NotificationChannel(
+      NOTIFICATION_CHANNEL_ID,
+      "Connection Status",
+      NotificationManager.IMPORTANCE_LOW
+    )
+    val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    manager.createNotificationChannel(channel)
+  }
+
+  private fun buildNotification(text: String): Notification {
+    val launchIntent = Intent(this, RootActivity::class.java).apply {
+      flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+    }
+    val pendingIntent = PendingIntent.getActivity(
+      this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE
+    )
+    return Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+      .setSmallIcon(R.drawable.synergy_icon_fit)
+      .setContentTitle("Synergy")
+      .setContentText(text)
+      .setContentIntent(pendingIntent)
+      .setOngoing(true)
+      .build()
+  }
+
+  private fun updateNotification(state: ConnectionState) {
+    val text = when {
+      !state.isEnabled -> "Disconnected"
+      state.isConnected -> "Connected to ${state.screen.server.address}"
+      else -> "Connecting..."
+    }
+    val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    manager.notify(NOTIFICATION_ID, buildNotification(text))
+  }
+
   override fun onCreate() {
     super.onCreate()
     log.debug { "onCreate:${this::class.java.simpleName}" }
@@ -733,6 +779,9 @@ class ConnectionService : Service() {
       }
       connectionStateModel.updateState { it.copy(isEnabled = savedIsEnabled) }
     }
+
+    createNotificationChannel()
+    startForeground(NOTIFICATION_ID, buildNotification("Disconnected"))
 
     ClientEventBus.on(this::onClientEvent)
 

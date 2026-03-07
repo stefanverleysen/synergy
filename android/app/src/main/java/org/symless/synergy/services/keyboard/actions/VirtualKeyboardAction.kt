@@ -79,7 +79,7 @@ val editActionCut: VirtualKeyboardActionCallable =
       val selectedText = et.text.subSequence(et.selectionStart, et.selectionEnd)
       log.debug { "Cutting selected text: $selectedText" }
       service.setClipboardText(selectedText)
-      ic.deleteSurroundingText(et.selectionEnd - et.selectionStart, 0)
+      ic.commitText("", 1)
       service.saveEditHistory(
         service.editorInfo,
         service.currentExtractedTest(),
@@ -123,6 +123,9 @@ val editActionLeft: VirtualKeyboardActionCallable =
     } else if (mods.isMeta || mods.isSuper) {
       log.debug { "Move cursor to start of line" }
       ic.setSelection(0, 0)
+    } else {
+      ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_LEFT))
+      ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_LEFT))
     }
   }
 
@@ -147,7 +150,46 @@ val editActionRight: VirtualKeyboardActionCallable =
       log.debug { "Move cursor to end of line" }
       val text = et.text
       ic.setSelection(text.length, text.length)
+    } else {
+      ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_RIGHT))
+      ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_RIGHT))
     }
+  }
+
+val editActionUp: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_UP))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_UP))
+  }
+
+val editActionDown: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_DOWN))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_DOWN))
+  }
+
+val editActionHome: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MOVE_HOME))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_MOVE_HOME))
+  }
+
+val editActionEnd: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MOVE_END))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_MOVE_END))
+  }
+
+val editActionPageUp: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_PAGE_UP))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_PAGE_UP))
+  }
+
+val editActionPageDown: VirtualKeyboardActionCallable =
+  { ic, et, specialKey, mods, event, editHistory, service ->
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_PAGE_DOWN))
+    ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_PAGE_DOWN))
   }
 
 val editActionBackSpace: VirtualKeyboardActionCallable =
@@ -156,7 +198,11 @@ val editActionBackSpace: VirtualKeyboardActionCallable =
 
     if (BuildConfig.DEBUG) service.logCurrentImeState()
 
-    ic.deleteSurroundingText(1, 0)
+    if (et != null && et.selectionStart != et.selectionEnd) {
+      ic.commitText("", 1)
+    } else {
+      ic.deleteSurroundingText(1, 0)
+    }
     service.saveEditHistory(service.editorInfo, service.currentExtractedTest())
   }
 
@@ -309,7 +355,13 @@ enum class VirtualKeyboardAction(val action: VirtualKeyboardActionCallable) {
   Redo(editActionRedo),
   InsertNewline(editActionInsertNewline),
   SendControlEnter(editActionSendControlEnter),
-  HandleReturn(editActionHandleReturn);
+  HandleReturn(editActionHandleReturn),
+  Up(editActionUp),
+  Down(editActionDown),
+  Home(editActionHome),
+  End(editActionEnd),
+  PageUp(editActionPageUp),
+  PageDown(editActionPageDown);
 
   val actionId: Int = ordinal
 

@@ -40,6 +40,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"  />
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <uses-permission android:name="org.symless.synergy.CONNECTION_SERVICE_PERMISSION"/>
 
     <queries>
@@ -84,6 +86,7 @@
         <service
                 android:name=".services.ConnectionService"
                 android:exported="true"
+                android:foregroundServiceType="connectedDevice"
                 android:permission="org.symless.synergy.CONNECTION_SERVICE_PERMISSION"
                 android:protectionLevel="signature"
         >
