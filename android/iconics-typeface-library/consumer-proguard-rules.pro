@@ -1,0 +1,3 @@
+-keep class org.symless.synergy.android.iconics.fontawesomepro.FontAwesomeProRegular { *; }
+-keep class org.symless.synergy.android.iconics.fontawesomepro.FontAwesomeProSolid { *; }
+-keep class org.symless.synergy.android.iconics.fontawesomepro.FontAwesomeProLight { *; }

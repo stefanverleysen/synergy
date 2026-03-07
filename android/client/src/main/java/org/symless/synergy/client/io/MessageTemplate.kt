@@ -1,0 +1,149 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Jonathan Glanz
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.symless.synergy.client.io
+
+import org.symless.synergy.client.io.msgs.BadMessage
+import org.symless.synergy.client.io.msgs.BusyMessage
+import org.symless.synergy.client.io.msgs.ClipboardDataMessage
+import org.symless.synergy.client.io.msgs.ClipboardMessage
+import org.symless.synergy.client.io.msgs.CloseMessage
+import org.symless.synergy.client.io.msgs.EnterMessage
+import org.symless.synergy.client.io.msgs.HelloBackMessage
+import org.symless.synergy.client.io.msgs.HelloMessage
+import org.symless.synergy.client.io.msgs.IncompatibleMessage
+import org.symless.synergy.client.io.msgs.InfoAckMessage
+import org.symless.synergy.client.io.msgs.InfoMessage
+import org.symless.synergy.client.io.msgs.KeepAliveMessage
+import org.symless.synergy.client.io.msgs.KeyDownMessage
+import org.symless.synergy.client.io.msgs.KeyRepeatMessage
+import org.symless.synergy.client.io.msgs.KeyUpMessage
+import org.symless.synergy.client.io.msgs.LeaveMessage
+import org.symless.synergy.client.io.msgs.Message
+import org.symless.synergy.client.io.msgs.MouseDownMessage
+import org.symless.synergy.client.io.msgs.MouseMoveMessage
+import org.symless.synergy.client.io.msgs.MouseRelMoveMessage
+import org.symless.synergy.client.io.msgs.MouseUpMessage
+import org.symless.synergy.client.io.msgs.MouseWheelMessage
+import org.symless.synergy.client.io.msgs.NoOpMessage
+import org.symless.synergy.client.io.msgs.QueryInfoMessage
+import org.symless.synergy.client.io.msgs.ResetOptionsMessage
+import org.symless.synergy.client.io.msgs.ScreenSaverMessage
+import org.symless.synergy.client.io.msgs.SetOptionsMessage
+import org.symless.synergy.client.io.msgs.UnknownMessage
+import kotlin.reflect.KClass
+
+enum class MessageTemplate(template: String, clazz: KClass<out Message>?) {
+    Hello("Synergy%2i%2i", HelloMessage::class),
+    HelloBack("Synergy%2i%2i%s", HelloBackMessage::class),
+    CNoop("CNOP", NoOpMessage::class),
+    CClose("CBYE", CloseMessage::class),
+    CEnter("CINN%2i%2i%4i%2i", EnterMessage::class),
+    CLeave("COUT", LeaveMessage::class),
+    CClipboard("CCLP%1i%4i", ClipboardMessage::class),
+    CScreenSaver("CSEC%1i", ScreenSaverMessage::class),
+    CResetOptions("CROP", ResetOptionsMessage::class),
+    CInfoAck("CIAK", InfoAckMessage::class),
+    CKeepAlive("CALV", KeepAliveMessage::class),
+    DKeyDownLang("DKDL%2i%2i%2i%s", KeyDownMessage::class),
+    DKeyDown("DKDN%2i%2i%2i", KeyDownMessage::class),
+    DKeyDown1_0("DKDN%2i%2i", KeyDownMessage::class),
+    DKeyRepeat("DKRP%2i%2i%2i%2i%s", KeyRepeatMessage::class),
+    DKeyRepeat1_0("DKRP%2i%2i%2i", KeyRepeatMessage::class),
+    DKeyUp("DKUP%2i%2i%2i", KeyUpMessage::class),
+    DKeyUp1_0("DKUP%2i%2i", KeyUpMessage::class),
+    DMouseDown("DMDN%1i", MouseDownMessage::class),
+    DMouseUp("DMUP%1i", MouseUpMessage::class),
+    DMouseMove("DMMV%2i%2i", MouseMoveMessage::class),
+    DMouseRelMove("DMRM%2i%2i", MouseRelMoveMessage::class),
+    DMouseWheel("DMWM%2i%2i", MouseWheelMessage::class),
+    DMouseWheel1_0("DMWM%2i", MouseWheelMessage::class),
+    DClipboard("DCLP%1i%4i%1i%s", ClipboardDataMessage::class),
+    DInfo("DINF%2i%2i%2i%2i%2i%2i%2i", InfoMessage::class),
+    DSetOptions("DSOP%4i", SetOptionsMessage::class),
+    DFileTransfer("DFTR%1i%s", null),
+    DDragInfo("DDRG%2i%s", null),
+    DSecureInputNotification("SECN%s", null),
+    DLanguageSynchronisation("LSYN%s", null),
+    QInfo("QINF", QueryInfoMessage::class),
+    EIncompatible("EICV%2i%2i", IncompatibleMessage::class),
+    EBusy("EBSY", BusyMessage::class),
+    EUnknown("EUNK", UnknownMessage::class),
+    EBad("EBAD", BadMessage::class);
+
+    val prefix: String
+    val code: String
+    val template: String
+    val specifiers: List<Specifier>
+    val clazz: KClass<out Message>? = clazz
+
+    init {
+        require(template.length >= 4) { "Message template must be at least 4 characters long." }
+        val parts = template.split("%")
+        this.code = parts.first()
+        this.prefix = code.substring(0, 4)
+
+        this.template = template
+        this.specifiers = parts.drop(1).map {
+            if (it[0].isDigit() && it.length == 2) Specifier(
+                SpecifierType.fromSpec(it[1].toString()),
+                it[0].digitToInt()
+            ) else Specifier(SpecifierType.fromSpec(it[0].toString()))
+
+        }
+    }
+
+
+
+    enum class SpecifierType {
+            INT("i"),
+            STRING("s");
+
+            val spec: String
+            constructor(spec: String) {
+                this.spec = spec
+            }
+
+            companion object {
+                fun fromSpec(spec: String):SpecifierType =
+                        entries.first { it.spec == spec }
+            }
+        }
+    data class Specifier(val type: SpecifierType, val size: Int = 0) {
+
+    }
+
+    companion object {
+        fun templateFromCode(code: String) =
+                entries.firstOrNull { it.code == code }
+
+        fun templateFromPrefix(prefix: String) =
+            entries.firstOrNull { it.prefix == prefix }
+
+    }
+
+    override fun toString(): String {
+        return "MessageTemplate(template='$template', code='$code', prefix='$prefix', clazz=$clazz)"
+    }
+}

@@ -1,0 +1,122 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Jonathan Glanz
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.symless.synergy.services
+
+import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import org.symless.synergy.client.util.logging.KLoggingManager
+import org.symless.synergy.data.aidl.ConnectionState
+import org.symless.synergy.data.aidl.ServerState
+import org.symless.synergy.data.models.AppPrefs
+import org.symless.synergy.ext.ConnectionStateDefaults
+import org.symless.synergy.ext.copy
+import org.symless.synergy.ext.getScreenSize
+
+class ConnectionStateModel(private val context: Context) {
+
+  companion object {
+    private val log =
+      KLoggingManager.logger(ConnectionStateModel::class.java.simpleName)
+  }
+
+  private val editableState = MutableStateFlow(ConnectionStateDefaults(context))
+
+  /** Combine states to make ConnectionState */
+  val state = editableState.asStateFlow()
+
+  /**
+   * Updates the connection state with the given [appPrefs].
+   * If the current screen configuration matches the app preferences, it does nothing.
+   * Otherwise, it updates the screen name and server configuration.
+   */
+  fun updateScreenFromAppPrefs(appPrefs: AppPrefs) {
+    updateState { currentState ->
+      val currentScreen = currentState.screen
+      val currentServer = currentScreen.server
+
+      // Check if anything other than dimensions needs updating
+      if (
+        currentServer.address == appPrefs.screen.server.address &&
+        currentServer.port == appPrefs.screen.server.port &&
+        currentServer.useTls == appPrefs.screen.server.useTls &&
+        currentScreen.name == appPrefs.screen.name &&
+        currentScreen.disconnectOnScreenOff == appPrefs.screen.disconnectOnScreenOff) {
+
+        log.debug { "AppPrefs are unchanged" }
+        return@updateState currentState
+      }
+
+      // Update everything except dimensions (width/height are managed by updateScreenDimensions)
+      currentState.copy(
+        screen =
+          currentScreen.copy(
+            name = appPrefs.screen.name,
+            disconnectOnScreenOff = appPrefs.screen.disconnectOnScreenOff,
+            server =
+              ServerState().apply {
+                address = appPrefs.screen.server.address
+                port = appPrefs.screen.server.port
+                useTls = appPrefs.screen.server.useTls
+              }
+          )
+      )
+
+    }
+  }
+
+  /**
+   * Updates just the screen dimensions in the connection state.
+   * This is useful when the device configuration changes (like screen rotation)
+   * without needing to update other screen properties.
+   */
+  fun updateScreenDimensions(width: Int, height: Int) {
+    updateState { currentState ->
+      val currentScreen = currentState.screen
+
+      // Only update if dimensions actually changed
+      if (currentScreen.width == width && currentScreen.height == height) {
+        log.debug { "Screen dimensions unchanged: ${width}x${height}" }
+        return@updateState currentState
+      }
+
+      log.info { "Updating screen dimensions from ${currentScreen.width}x${currentScreen.height} to ${width}x${height}" }
+
+      currentState.copy(
+        screen = currentScreen.copy(
+          width = width,
+          height = height
+        )
+      )
+    }
+  }
+
+  fun updateState(mutator: (ConnectionState) -> ConnectionState) {
+    editableState.update { mutator(it) }
+  }
+
+}
+

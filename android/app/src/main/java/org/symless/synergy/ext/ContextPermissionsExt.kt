@@ -1,0 +1,313 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Jonathan Glanz
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+@file:OptIn(ExperimentalAtomicApi::class)
+@file:Suppress("unused")
+
+package org.symless.synergy.ext
+
+import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
+import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Context.RECEIVER_EXPORTED
+import android.content.Intent
+import android.content.IntentFilter
+import android.provider.Settings
+import android.text.TextUtils
+import android.view.inputmethod.InputMethodInfo
+import android.view.inputmethod.InputMethodManager
+import androidx.core.net.toUri
+import arrow.core.raise.catch
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.reflect.KClass
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.symless.synergy.client.util.AbstractDisposable
+import org.symless.synergy.client.util.logging.KLoggingManager
+
+private val log = KLoggingManager.logger("ContextPermissions")
+
+/** Check if draw overlays is enabled for the app */
+fun Context.canDrawOverlays(): Boolean {
+  return Settings.canDrawOverlays(this)
+}
+
+fun Context.requestOverlayPermission() {
+  if (!canDrawOverlays()) {
+    val intent =
+      Intent(
+        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+        "package:${packageName}".toUri(),
+      )
+    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    startActivity(intent)
+  }
+}
+
+fun Context.isAccessibilityServiceEnabled(
+  serviceClass: Class<out AccessibilityService>
+): Boolean {
+  try {
+    val expectedComponentName = ComponentName(this, serviceClass)
+    val enabledServicesSetting =
+      Settings.Secure.getString(
+        contentResolver,
+        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+      ) ?: return false
+
+    val colonSplitter = TextUtils.SimpleStringSplitter(':')
+    colonSplitter.setString(enabledServicesSetting)
+    while (colonSplitter.hasNext()) {
+      val componentName =
+        ComponentName.unflattenFromString(colonSplitter.next())
+      if (componentName != null && componentName == expectedComponentName) {
+        return true
+      }
+    }
+  } catch (err: Exception) {
+    log.warn(err) { "Failed to check if accessibility service is enabled" }
+  }
+  return false
+}
+
+fun Context.requestAccessibilityEnabled() {
+  val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+  intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+  startActivity(intent)
+}
+
+fun Context.observeAccessibilityStatus(
+  serviceClass: Class<out AccessibilityService>,
+  scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
+  intervalMillis: Long = 1000,
+  onChange: (Boolean) -> Unit,
+): () -> Unit {
+  val enabled = AtomicBoolean(true)
+  val job =
+    scope.launch {
+      var lastStatus = false
+      while (this.isActive && enabled.load()) {
+        val currentStatus = isAccessibilityServiceEnabled(serviceClass)
+        if (currentStatus != lastStatus) {
+          lastStatus = currentStatus
+          onChange(currentStatus)
+        }
+        delay(intervalMillis) // check every second
+      }
+    }
+
+  return {
+    enabled.store(false)
+    if (job.isActive) {
+      job.cancel()
+    }
+  }
+}
+
+val Context.SERVICE_CONNECTED_ACTION: String
+  get() = "${packageName}.SERVICE_CONNECTED"
+
+val Context.SERVICE_DISCONNECTED_ACTION: String
+  get() = "${packageName}.SERVICE_DISCONNECTED"
+
+fun <T : Service> Context.registerForServiceConnectionEvents(
+  serviceClazz: KClass<T>,
+  onServiceConnected: (serviceClazz: KClass<T>) -> Unit,
+  once: Boolean = false,
+): AutoCloseable {
+  return object : AbstractDisposable() {
+    private val filter = IntentFilter(SERVICE_CONNECTED_ACTION)
+    private val serviceClazzName = serviceClazz.java.name
+    private val receiver =
+      object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+          if (isDisposed) return
+
+          val intentServiceClazzName = intent.getStringExtra("serviceClazz")
+          if (intentServiceClazzName != serviceClazzName) {
+            log.debug {
+              "$intentServiceClazzName is not $serviceClazzName, not firing"
+            }
+            return
+          }
+          onServiceConnected(serviceClazz)
+          if (once) {
+            log.debug {
+              "Removing BroadcastReceiver for ${serviceClazz.java.simpleName}"
+            }
+            disposeReceiver()
+          }
+        }
+      }
+
+    init {
+      registerReceiver(receiver, filter, RECEIVER_EXPORTED)
+    }
+
+    private fun disposeReceiver() {
+      dispose()
+    }
+
+    override fun onDispose() {
+      unregisterReceiver(receiver)
+    }
+  }
+}
+
+inline fun <reified T : Service> Context.sendServiceConnectionEvent() {
+  val log = KLoggingManager.logger<T>()
+
+  val serviceClazz = T::class
+  log.debug {
+    "sendServiceConnectionEvent($SERVICE_CONNECTED_ACTION) ${serviceClazz.java.simpleName}"
+  }
+  val intent =
+    Intent(SERVICE_CONNECTED_ACTION).apply {
+      putExtra("serviceClazz", serviceClazz.java.name)
+    }
+  sendBroadcast(intent)
+}
+
+inline fun <reified T : Service> Context.sendServiceDisconnectionEvent() {
+  val log = KLoggingManager.logger<T>()
+
+  val serviceClazz = T::class
+  log.debug {
+    "sendServiceDisconnectionEvent($SERVICE_DISCONNECTED_ACTION) ${serviceClazz.java.simpleName}"
+  }
+  val intent =
+    Intent(SERVICE_DISCONNECTED_ACTION).apply {
+      putExtra("serviceClazz", serviceClazz.java.name)
+    }
+  sendBroadcast(intent)
+}
+
+fun <T : Service> Context.registerForServiceDisconnectionEvents(
+  serviceClazz: KClass<T>,
+  onServiceDisconnected: (serviceClazz: KClass<T>) -> Unit,
+): AutoCloseable {
+  return object : AbstractDisposable() {
+    private val filter = IntentFilter(SERVICE_DISCONNECTED_ACTION)
+    private val serviceClazzName = serviceClazz.java.name
+    private val receiver =
+      object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+          if (isDisposed) return
+
+          val intentServiceClazzName = intent.getStringExtra("serviceClazz")
+          if (intentServiceClazzName != serviceClazzName) {
+            log.debug {
+              "$intentServiceClazzName is not $serviceClazzName, not firing"
+            }
+            return
+          }
+          onServiceDisconnected(serviceClazz)
+        }
+      }
+
+    init {
+      registerReceiver(receiver, filter, RECEIVER_EXPORTED)
+    }
+
+    override fun onDispose() {
+      unregisterReceiver(receiver)
+    }
+  }
+}
+
+const val SYNERGY_PACKAGE = "org.symless.synergy"
+const val SYNERGY_IME_ID =
+  "$SYNERGY_PACKAGE/$SYNERGY_PACKAGE.services.VirtualKeyboardService"
+
+fun Context.launchInputMethodServiceSettings() {
+  val intent =
+    Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).apply {
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+  startActivity(intent)
+}
+
+@SuppressLint("ObsoleteSdkInt")
+fun Context.enabledInputMethodServicesFromSettings(): List<String> {
+  if (android.os.Build.VERSION.SDK_INT > 33) return emptyList()
+  try {
+
+    val enabledList =
+      Settings.Secure.getString(
+        contentResolver,
+        Settings.Secure.ENABLED_INPUT_METHODS,
+      ) ?: return emptyList()
+
+    // the list is colon-separated
+    return enabledList.split(':')
+  } catch (err: Exception) {
+    log.warn(err) { "Failed to get enabled IME list" }
+    return emptyList()
+  }
+}
+
+/**
+ * @param imeId full ID of your IME, e.g.
+ *   "com.example.myime/.MyInputMethodService"
+ */
+fun Context.isInputMethodServiceEnabledFromSettings(
+  imeId: String = SYNERGY_IME_ID
+): Boolean {
+  val enabledIMESettings = enabledInputMethodServicesFromSettings()
+  if (!enabledIMESettings.isEmpty())
+    return enabledIMESettings.any { it.trim() == imeId }
+  return false
+}
+
+fun Context.allInputMethodServices(): List<InputMethodInfo> {
+  val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+  return imm.inputMethodList
+}
+
+fun Context.enabledInputMethodServices(): List<InputMethodInfo> {
+  val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+  return imm.enabledInputMethodList
+}
+
+/** @param imePackage the package name of your IME, e.g. "com.example.myime" */
+fun Context.isInputMethodServiceEnabled(
+  imePackage: String = SYNERGY_PACKAGE
+): Boolean {
+  return catch({
+    enabledInputMethodServices().any { it.packageName == imePackage } ||
+      isInputMethodServiceEnabledFromSettings()
+  }) { err: Exception ->
+    log.warn(err) { "Failed to check if IME is enabled" }
+    false
+  }
+}

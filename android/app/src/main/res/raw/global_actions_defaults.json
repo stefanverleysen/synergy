@@ -1,0 +1,183 @@
+[
+  {
+    "actionId": 1,
+    "label": "Back",
+    "defaultShortcutKeys": [
+      "Escape"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 2,
+    "label": "Home",
+    "defaultShortcutKeys":  [
+      "Control+h",
+      "Meta+h",
+      "Super+h"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 3,
+    "label": "Recent Apps",
+    "defaultShortcutKeys":  [
+      "Alt+Tab",
+      "Meta+Tab",
+      "Super+Tab"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 4,
+    "label": "Notifications",
+    "defaultShortcutKeys":  [
+      "Control+0",
+      "Meta+0",
+      "Super+0"
+    ],
+    "ignoreIME": true
+
+  },
+  {
+    "actionId": 5,
+    "label": "Quick Settings",
+    "defaultShortcutKeys":  [
+      "Control+,",
+      "Meta+,",
+      "Super+,"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 6,
+    "label": "Power Dialog",
+    "defaultShortcutKeys":  [
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 8,
+    "label": "Lock Screen",
+    "defaultShortcutKeys":  [
+      "Control+L",
+      "Meta+L",
+      "Super+L"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 9,
+    "label": "Screenshot",
+    "defaultShortcutKeys":  [
+      "Control+4",
+      "Meta+4",
+      "Super+4"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 10,
+    "label": "Headset Hook",
+    "defaultShortcutKeys":  [],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 13,
+    "label": "Accessibility Shortcut",
+    "defaultShortcutKeys":  [
+      "Control+;",
+      "Meta+;",
+      "Super+;"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 16,
+    "label": "Dpad Up",
+    "defaultShortcutKeys":  [
+      "Up"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 17,
+    "label": "Dpad Down",
+    "defaultShortcutKeys":  [
+      "Down"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 18,
+    "label": "Dpad Left",
+    "defaultShortcutKeys":  [
+      "Left"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 19,
+    "label": "Dpad Right",
+    "defaultShortcutKeys":  [
+      "Right"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 20,
+    "label": "Dpad Center",
+    "defaultShortcutKeys":  [
+      "Meta+Return",
+      "Super+Return"
+    ],
+    "ignoreIME": false
+  },
+  {
+    "actionId": 101,
+    "label": "Volume Up",
+    "defaultShortcutKeys":  [
+      "VolumeUp"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 102,
+    "label": "Volume Down",
+    "defaultShortcutKeys":  [
+      "VolumeDown"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 103,
+    "label": "Mute Toggle",
+    "defaultShortcutKeys":  [
+      "Mute"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 104,
+    "label": "Media Play/Pause",
+    "defaultShortcutKeys":  [
+      "MediaPlayPause"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 105,
+    "label": "Media Next",
+    "defaultShortcutKeys":  [
+      "MediaNext"
+    ],
+    "ignoreIME": true
+  },
+  {
+    "actionId": 106,
+    "label": "Media Previous",
+    "defaultShortcutKeys":  [
+      "MediaPrevious"
+    ],
+    "ignoreIME": true
+  }
+]

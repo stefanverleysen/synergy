@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2025 Jonathan Glanz
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all
+  ~ copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  -->
+
+<resources>
+    <string name="define_FontAwesomePro">year;author;libraryName;libraryWebsite</string>
+    <string name="library_FontAwesomePro_author">FontAwesome</string>
+    <string name="library_FontAwesomePro_authorWebsite">https://fontawesome.com/</string>
+    <string name="library_FontAwesomePro_libraryName">FontAwesomePro</string>
+    <string name="library_FontAwesomePro_libraryDescription">The internet\'s most popular icon toolkit has been redesigned and built from scratch. On top of this, features like icon font ligatures, an SVG framework, official NPM packages for popular frontend libraries like React, and access to a new CDN.</string>
+    <string name="library_FontAwesomePro_libraryWebsite">https://fontawesome.com/</string>
+    <string name="library_FontAwesomePro_libraryVersion">@string/fontawesomepro_version</string>
+    <string name="library_FontAwesomePro_licenseId">sil_ofl_1_1</string>
+    <string name="library_FontAwesomePro_isOpenSource">true</string>
+    <string name="library_FontAwesomePro_repositoryLink">https://github.com/FortAwesome/Font-Awesome</string>
+    <!-- Custom variables section -->
+    <string name="library_FontAwesomePro_year">2021</string>
+</resources> 

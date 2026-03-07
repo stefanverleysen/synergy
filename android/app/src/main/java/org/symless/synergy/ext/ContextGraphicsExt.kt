@@ -1,0 +1,57 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Jonathan Glanz
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.symless.synergy.ext
+
+import android.content.Context
+import android.hardware.display.DisplayManager
+import android.view.Display
+import org.symless.synergy.client.models.Size
+import org.symless.synergy.client.models.SizeF
+
+data class ScreenSize(val px: Size, val dp: SizeF, val scale: Float)
+
+/**
+ * Get the screen size for a specific display.
+ *
+ * @param displayId The ID of the display to get metrics for. If null, uses the context's display.
+ * @return ScreenSize containing pixel dimensions, dp dimensions, and scale factor.
+ */
+fun Context.getScreenSize(displayId: Int? = null): ScreenSize {
+    val displayContext = if (displayId != null) {
+        val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        val display = displayManager.getDisplay(displayId) ?: this.display!!
+        createDisplayContext(display)
+    } else {
+        this
+    }
+
+    // Now use resources.displayMetrics from the correct context
+    val dm = displayContext.resources.displayMetrics
+    val widthPx = dm.widthPixels
+    val heightPx = dm.heightPixels
+    val widthDp = widthPx / dm.density
+    val heightDp = heightPx / dm.density
+    return ScreenSize(Size(widthPx, heightPx), SizeF(widthDp, heightDp), widthPx.toFloat() / widthDp)
+}

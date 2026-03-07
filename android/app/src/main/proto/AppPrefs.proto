@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option java_package = "org.symless.synergy.data.models";
+option java_multiple_files = true;
+
+message AppPrefs {
+  message LoggingConfig {
+    bool forwarding_enabled = 1;
+    string forwarding_level = 2; // e.g., "DEBUG", "INFO", "WARN", "ERROR"
+  }
+
+  message ScreenConfig {
+    message ServerConfig {
+      string address = 1;
+
+      int32 port = 2;
+
+      bool use_tls = 3;
+    }
+
+    string name = 1;
+
+    ServerConfig server = 5;
+
+    bool disconnect_on_screen_off = 6;
+
+  }
+
+  message ActionsConfig {
+    message Shortcut {
+      string action_id = 1;
+
+      string label = 2;
+      string description = 3;
+
+      uint32 key_code = 5;
+      uint32 key_mask = 6;
+
+    }
+    map<string, Shortcut> shortcuts = 5;
+  }
+
+  message TrustConfig {
+    message TrustedFingerprint {
+      string host = 1; // "host:port" format
+      string fingerprint_sha256 = 2; // SHA256 hex digest
+      int64 last_verified_time = 3; // Unix timestamp
+    }
+    // Map of "host:port" -> TrustedFingerprint
+    map<string, TrustedFingerprint> trusted_fingerprints = 1;
+  }
+
+  message ConnectionConfig {
+    bool is_enabled = 1;
+  }
+
+  ScreenConfig screen = 1;
+
+  ActionsConfig actions = 2;
+
+  LoggingConfig logging = 3;
+
+  TrustConfig trust = 4;
+
+  ConnectionConfig connection = 5;
+
+}
