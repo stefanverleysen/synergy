@@ -27,12 +27,10 @@ package org.symless.synergy.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
-import org.symless.synergy.ui.screens.settingsScreen
 
 @Composable
 fun RootNavHost(
   appState: IAppState,
-//  onShowSnackbar: suspend (String, String?) -> Boolean,
   modifier: Modifier = Modifier,
 ) {
   val navController = appState.navController
@@ -42,6 +40,5 @@ fun RootNavHost(
     modifier = modifier,
   ) {
     homeScreen(appState = appState)
-    settingsScreen(appState = appState)
   }
 }

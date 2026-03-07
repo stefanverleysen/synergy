@@ -61,10 +61,15 @@ import org.symless.synergy.ui.components.ClientCertificateDialog
 import org.symless.synergy.ui.components.SynergyCard
 import org.symless.synergy.ui.components.SynergyCardSubtitle
 import org.symless.synergy.ui.components.SynergyCardTitle
+import org.symless.synergy.ui.components.SynergyCardWidgetTitle
+import org.symless.synergy.ui.components.SynergyFillSpacer
+import org.symless.synergy.ui.components.SynergyCardWidget
+import org.symless.synergy.ui.components.Toolbar
 import org.symless.synergy.ui.components.IAppState
 import org.symless.synergy.ui.components.LocalSnackbarHostState
 import org.symless.synergy.ui.components.synergyCardDefaultContainerModifier
 import org.symless.synergy.ui.components.synergyCardStyleDefaults
+import org.symless.synergy.ui.components.synergyCardWidgetStyleDefaults
 import org.symless.synergy.ui.components.preview.PreviewSynergyThemedRoot
 import org.symless.synergy.data.ClientCertificateManager
 import org.symless.synergy.data.TrustStore
@@ -123,7 +128,7 @@ internal fun SettingsScreenRoute(appState: IAppState) {
         }
       }
     },
-    onCancel = { appState.navigateToHome() },
+    onCancel = { appState.toggleSettings() },
   )
 }
 
@@ -150,13 +155,10 @@ fun SettingsScreen(
     is SettingsUiState.Success -> {
       val textFieldColors =
         TextFieldDefaults
-          .colors( //        unfocusedContainerColor = Color.Transparent,
+          .colors(
             unfocusedIndicatorColor = Color.Transparent
           )
       val focusRequester = remember { FocusRequester() }
-      LaunchedEffect(Unit) {
-        focusRequester.requestFocus() //        keyboardController?.show()
-      }
       val screenValue = uiState.screen
       var screenName by remember(screenValue) { mutableStateOf(screenValue.name) }
       var address by remember(screenValue) { mutableStateOf(screenValue.server.address) }
@@ -165,7 +167,7 @@ fun SettingsScreen(
       var disconnectOnScreenOff by remember(screenValue) { mutableStateOf(screenValue.disconnectOnScreenOff) }
       var isDirty by remember(screenValue) { mutableStateOf(false) }
 
-      val saveChanges ={
+      val saveChanges = {
         onChange(
           ScreenState().apply {
             name = screenName
@@ -185,366 +187,311 @@ fun SettingsScreen(
         with(LocalDensity.current) { textStyle.fontSize.toDp() }
 
       val innerScrollState = rememberScrollState()
+      var showClientCertDialog by remember { mutableStateOf(false) }
 
-      Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment =
-          Alignment
-            .CenterHorizontally, // (optionally) center them horizontally too
-      ) {
-        SynergyCard(
-          header = {
-            SynergyCardTitle(R.string.settings_screen_title)
-            SynergyCardSubtitle(R.string.settings_screen_instructions)
-          },
-          style =
-            synergyCardStyleDefaults(
-              containerModifier =
-                synergyCardDefaultContainerModifier().padding(vertical = 16.dp)
-            ),
-          useFooterStyle = false,
-          useContentStyle = false,
-          footer = {
-            /** Bottom action bar */
-            Row(
-              modifier =
-                Modifier.fillMaxWidth()
-                  .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                  )
+      SynergyCardWidget(
+        style = synergyCardWidgetStyleDefaults(
+          containerModifier = Modifier.fillMaxSize(),
+        ),
+        header = {
+          Toolbar {
+            SynergyCardWidgetTitle(
+              text = stringResource(R.string.settings_screen_title),
+            )
+            SynergyFillSpacer()
+            Button(
+              onClick = { onCancel() },
+              shape = MaterialTheme.shapes.small,
+              colors = ButtonDefaults.textButtonColors(),
             ) {
-              CompositionLocalProvider(
-                LocalContentColor provides MaterialTheme.colorScheme.onSecondary
-              ) {
-                Row(
-                  horizontalArrangement =
-                    Arrangement.spacedBy(8.dp, alignment = Alignment.End),
-                  modifier = Modifier.fillMaxWidth().padding(8.dp),
-                ) {
-                  Button(
-                    onClick = { onCancel() },
-                    shape = MaterialTheme.shapes.small,
-                    colors = ButtonDefaults.textButtonColors(),
-                  ) {
-                    Text(stringResource(R.string.button_cancel))
-                  }
-                  Button(
-                    onClick = {
-                      when {
-                        isDirty -> saveChanges()
-                        else -> onCancel()
-                      }
-                    },
-                    shape = MaterialTheme.shapes.small,
-                    colors =
-                      ButtonDefaults.filledTonalButtonColors(
-                        containerColor =
-                          MaterialTheme.colorScheme.onSecondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondary,
-                      ),
-                  ) {
-                    Text(
-                      stringResource(
-                        when {
-                          isDirty -> R.string.button_save
-                          else -> R.string.button_done
-                        }
-                      )
-                    )
-                  }
+              Text(stringResource(R.string.button_cancel))
+            }
+            Button(
+              onClick = {
+                when {
+                  isDirty -> { saveChanges(); onCancel() }
+                  else -> onCancel()
                 }
-              }
+              },
+              shape = MaterialTheme.shapes.small,
+              colors = ButtonDefaults.filledTonalButtonColors(),
+              enabled = isDirty,
+            ) {
+              Text(stringResource(R.string.button_save))
             }
-          },
+          }
+        },
+      ) {
+        Column(
+          verticalArrangement = Arrangement.spacedBy(16.dp),
+          modifier =
+            Modifier.fillMaxWidth()
+              .weight(1f)
+              .padding(horizontal = 16.dp, vertical = 12.dp)
+              .verticalScroll(innerScrollState),
         ) {
-          Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+          TextField(
+            label = {
+              Text(
+                stringResource(R.string.settings_screen_screen_name_label)
+              )
+            },
+            singleLine = true,
+            value = screenName,
+            colors = textFieldColors,
+            onValueChange = {
+              screenName = it
+              isDirty = true
+            },
+            placeholder = {
+              Text(
+                stringResource(
+                  R.string.settings_screen_screen_name_placeholder
+                )
+              )
+            },
             modifier =
-              Modifier.fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .verticalScroll(innerScrollState),
+              Modifier.focusRequester(focusRequester)
+                .background(Color.Transparent)
+                .fillMaxWidth(),
+          )
+
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
           ) {
-            Row(
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              TextField(
-                label = {
-                  Text(
-                    stringResource(R.string.settings_screen_screen_name_label)
+            TextField(
+              value = address,
+              maxLines = 1,
+              label = {
+                Text(
+                  stringResource(
+                    R.string.settings_screen_screen_address_label
                   )
-                },
-                singleLine = true,
-                value = screenName,
-                colors = textFieldColors,
-                onValueChange = {
-                  screenName = it
+                )
+              },
+              onValueChange = {
+                address = it
+                isDirty = true
+              },
+              placeholder = {
+                Text(
+                  stringResource(
+                    R.string.settings_screen_screen_address_placeholder
+                  )
+                )
+              },
+              singleLine = true,
+              colors = textFieldColors,
+              modifier = Modifier.background(Color.Transparent).weight(1f),
+            )
+
+            TextField(
+              value = port.toString(),
+              colors = textFieldColors,
+              label = {
+                Text(
+                  stringResource(R.string.settings_screen_screen_port_label)
+                )
+              },
+              onValueChange = { newPort ->
+                if (newPort.all { it.isDigit() }) {
+                  port = newPort.toInt()
+                  isDirty = true
+                }
+              },
+              placeholder = {
+                Text(
+                  stringResource(
+                    R.string.settings_screen_screen_port_placeholder
+                  )
+                )
+              },
+              keyboardOptions =
+                KeyboardOptions(
+                  keyboardType = KeyboardType.Number,
+                  imeAction = ImeAction.Done,
+                ),
+              singleLine = true,
+              modifier =
+                Modifier.background(Color.Transparent)
+                  .width(textStyleCharWidthDp * 6f),
+            )
+
+            Column(
+              verticalArrangement =
+                Arrangement.spacedBy(
+                  space = 0.dp,
+                  alignment = Alignment.CenterVertically,
+                ),
+              horizontalAlignment = Alignment.CenterHorizontally,
+              modifier = Modifier.padding(top = 2.dp),
+            ) {
+              Text(
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                text =
+                  stringResource(R.string.app_prefs_screen_server_use_tls),
+              )
+              Checkbox(
+                checked = useTls,
+                onCheckedChange = {
+                  useTls = it
                   isDirty = true
                 },
-                placeholder = {
-                  Text(
-                    stringResource(
-                      R.string.settings_screen_screen_name_placeholder
-                    )
-                  )
-                },
-                modifier =
-                  Modifier.focusRequester(focusRequester)
-                    .background(Color.Transparent)
-                    .fillMaxWidth(),
               )
             }
+          }
 
-            Row(
-              horizontalArrangement =
-                Arrangement.spacedBy(
-                  8.dp
-                ), // verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.fillMaxWidth(),
+          Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+          ) {
+            Column(
+              modifier = Modifier.weight(1f).padding(end = 8.dp)
             ) {
-              TextField(
-                value = address,
-                maxLines = 1,
-                label = {
-                  Text(
-                    stringResource(
-                      R.string.settings_screen_screen_address_label
-                    )
-                  )
-                },
-                onValueChange = {
-                  address = it
-                  isDirty = true
-                },
-                placeholder = {
-                  Text(
-                    stringResource(
-                      R.string.settings_screen_screen_address_placeholder
-                    )
-                  )
-                },
-                singleLine = true,
-                colors = textFieldColors,
-                modifier = Modifier.background(Color.Transparent).weight(1f),
+              Text(
+                text = stringResource(R.string.settings_screen_disconnect_on_screen_off_label),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+              Text(
+                text = stringResource(R.string.settings_screen_disconnect_on_screen_off_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+            Switch(
+              checked = disconnectOnScreenOff,
+              onCheckedChange = {
+                disconnectOnScreenOff = it
+                isDirty = true
+              },
+            )
+          }
+
+          HorizontalDivider()
+
+          Column(
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Text(
+              text = stringResource(R.string.tls_settings_title),
+              style = MaterialTheme.typography.titleMedium,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+              text = stringResource(R.string.tls_settings_description),
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+            )
+
+            Column(
+              modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+              Text(
+                text = stringResource(R.string.server_fingerprints_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+              Text(
+                text = stringResource(R.string.server_fingerprints_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
               )
 
-              TextField(
-                value = port.toString(),
-                colors = textFieldColors,
-                label = {
-                  Text(
-                    stringResource(R.string.settings_screen_screen_port_label)
-                  )
-                },
-                onValueChange = { newPort ->
-                  if (newPort.all { it.isDigit() }) {
-                    port = newPort.toInt()
-                    isDirty = true
+              val ctx = LocalContext.current
+              val snackbarHost = LocalSnackbarHostState.current
+
+              Button(
+                onClick = {
+                  composableScope.launch {
+                    val trustStore = TrustStore(ctx)
+                    trustStore.clearAllFingerprints()
+                    snackbarHost.showSnackbar(ctx.getString(R.string.server_fingerprints_cleared))
                   }
                 },
-                placeholder = {
-                  Text(
-                    stringResource(
-                      R.string.settings_screen_screen_port_placeholder
-                    )
-                  )
-                },
-                keyboardOptions =
-                  KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done,
-                  ),
-                singleLine = true,
-                modifier =
-                  Modifier.background(Color.Transparent)
-                    .width(textStyleCharWidthDp * 6f),
-              )
-
-              Column(
-                verticalArrangement =
-                  Arrangement.spacedBy(
-                    space = 0.dp,
-                    alignment = Alignment.CenterVertically,
-                  ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 2.dp),
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.outlinedButtonColors(),
+                modifier = Modifier.padding(top = 8.dp),
               ) {
-                Text(
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurface,
-                  text =
-                    stringResource(R.string.app_prefs_screen_server_use_tls),
-                )
-                Checkbox(
-                  checked = useTls,
-                  onCheckedChange = {
-                    useTls = it
-                    isDirty = true
-                  },
-                )
+                Text(stringResource(R.string.server_fingerprints_clear_all))
               }
             }
-
-            // Disconnect on screen off toggle
-            Row(
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            ) {
-              Column(
-                modifier = Modifier.weight(1f).padding(end = 8.dp)
-              ) {
-                Text(
-                  text = stringResource(R.string.settings_screen_disconnect_on_screen_off_label),
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                  text = stringResource(R.string.settings_screen_disconnect_on_screen_off_description),
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              }
-              Switch(
-                checked = disconnectOnScreenOff,
-                onCheckedChange = {
-                  disconnectOnScreenOff = it
-                  isDirty = true
-                },
-              )
-            }
-
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // TLS Certificate Management Section
-            var showClientCertDialog by remember { mutableStateOf(false) }
 
             Column(
               modifier = Modifier.fillMaxWidth()
             ) {
               Text(
-                text = stringResource(R.string.tls_settings_title),
-                style = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.client_cert_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
               )
               Text(
-                text = stringResource(R.string.tls_settings_description),
+                text = stringResource(R.string.client_cert_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                modifier = Modifier.padding(top = 4.dp)
               )
 
-              // Server Fingerprints subsection
-              Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+              val ctx = LocalContext.current
+              val snackbarHost = LocalSnackbarHostState.current
+
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
               ) {
-                Text(
-                  text = stringResource(R.string.server_fingerprints_subtitle),
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                  text = stringResource(R.string.server_fingerprints_description),
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  modifier = Modifier.padding(top = 4.dp)
-                )
-
-                val ctx = LocalContext.current
-                val snackbarHost = LocalSnackbarHostState.current
-
                 Button(
                   onClick = {
                     composableScope.launch {
-                      val trustStore = TrustStore(ctx)
-                      trustStore.clearAllFingerprints()
-                      snackbarHost.showSnackbar(ctx.getString(R.string.server_fingerprints_cleared))
+                      val certManager = ClientCertificateManager(ctx)
+                      val cert = certManager.getCertificate()
+                      if (cert != null) {
+                        showClientCertDialog = true
+                      } else {
+                        snackbarHost.showSnackbar(ctx.getString(R.string.client_cert_not_available))
+                      }
                     }
                   },
                   shape = MaterialTheme.shapes.small,
                   colors = ButtonDefaults.outlinedButtonColors(),
-                  modifier = Modifier.padding(top = 8.dp),
                 ) {
-                  Text(stringResource(R.string.server_fingerprints_clear_all))
+                  Text(stringResource(R.string.client_cert_view))
                 }
-              }
 
-              // Client Certificate subsection
-              Column(
-                modifier = Modifier.fillMaxWidth()
-              ) {
-                Text(
-                  text = stringResource(R.string.client_cert_subtitle),
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                  text = stringResource(R.string.client_cert_description),
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  modifier = Modifier.padding(top = 4.dp)
-                )
-
-                val ctx = LocalContext.current
-                val snackbarHost = LocalSnackbarHostState.current
-
-                Row(
-                  horizontalArrangement = Arrangement.spacedBy(8.dp),
-                  modifier = Modifier.padding(top = 8.dp),
+                Button(
+                  onClick = { onRegenerateCertificate() },
+                  enabled = !isRegenerating,
+                  shape = MaterialTheme.shapes.small,
+                  colors = ButtonDefaults.outlinedButtonColors(),
                 ) {
-                  Button(
-                    onClick = {
-                      composableScope.launch {
-                        val certManager = ClientCertificateManager(ctx)
-                        val cert = certManager.getCertificate()
-                        if (cert != null) {
-                          showClientCertDialog = true
-                        } else {
-                          snackbarHost.showSnackbar(ctx.getString(R.string.client_cert_not_available))
-                        }
-                      }
-                    },
-                    shape = MaterialTheme.shapes.small,
-                    colors = ButtonDefaults.outlinedButtonColors(),
-                  ) {
-                    Text(stringResource(R.string.client_cert_view))
+                  if (isRegenerating) {
+                    CircularProgressIndicator(
+                      modifier = Modifier.size(16.dp),
+                      strokeWidth = 2.dp,
+                      color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                   }
-
-                  Button(
-                    onClick = { onRegenerateCertificate() },
-                    enabled = !isRegenerating,
-                    shape = MaterialTheme.shapes.small,
-                    colors = ButtonDefaults.outlinedButtonColors(),
-                  ) {
-                    if (isRegenerating) {
-                      CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                      )
-                      Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(stringResource(R.string.client_cert_regenerate))
-                  }
+                  Text(stringResource(R.string.client_cert_regenerate))
                 }
               }
             }
+          }
 
-            // Client Certificate Dialog
-            if (showClientCertDialog) {
-              val ctx = LocalContext.current
-              val certManager = ClientCertificateManager(ctx)
-              val cert = certManager.getCertificate()
-              cert?.let {
-                val fingerprint = FingerprintManager.computeFingerprint(it)
-                ClientCertificateDialog(
-                  fingerprint = fingerprint,
-                  onDismiss = { showClientCertDialog = false }
-                )
-              }
+          if (showClientCertDialog) {
+            val ctx = LocalContext.current
+            val certManager = ClientCertificateManager(ctx)
+            val cert = certManager.getCertificate()
+            cert?.let {
+              val fingerprint = FingerprintManager.computeFingerprint(it)
+              ClientCertificateDialog(
+                fingerprint = fingerprint,
+                onDismiss = { showClientCertDialog = false }
+              )
             }
           }
         }

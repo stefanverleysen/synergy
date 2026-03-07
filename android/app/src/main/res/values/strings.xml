@@ -25,8 +25,8 @@
 
 <resources>
     <string name="ime_name">Synergy</string>
-    <string name="app_name">Synergy</string>
-    <string name="title_activity_settings">Synergy Settings</string>
+    <string name="app_name">Synergy Android</string>
+    <string name="title_activity_settings">Synergy Android</string>
 
     <string name="logo_content_desc">Logo</string>
 

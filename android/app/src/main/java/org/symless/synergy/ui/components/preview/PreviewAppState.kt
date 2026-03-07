@@ -103,6 +103,12 @@ class PreviewAppState(
 
   override fun navigateToHome() {}
 
+  private val _showSettings = MutableStateFlow(false)
+  override val showSettings: StateFlow<Boolean> = _showSettings.asStateFlow()
+  override fun toggleSettings() {
+    _showSettings.value = !_showSettings.value
+  }
+
   val previewPermissionIMEEnabledFlow = MutableStateFlow(initialPermissionsGranted)
   override val permissionIMEEnabled =
     previewPermissionIMEEnabledFlow.asStateFlow()

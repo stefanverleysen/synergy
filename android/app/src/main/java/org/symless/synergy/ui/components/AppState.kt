@@ -67,6 +67,9 @@ interface IAppState {
    */
   fun setEditorPlaygroundFocused(focused: Boolean)
 
+  val showSettings: StateFlow<Boolean>
+  fun toggleSettings()
+
   /** Mirrors `serviceClient.stateFlow` */
   val connectionStateFlow: StateFlow<ConnectionState>
 
@@ -144,6 +147,12 @@ class AppState(
   override val editorPlaygroundFocused = MutableStateFlow(false)
   override fun setEditorPlaygroundFocused(focused: Boolean) {
     editorPlaygroundFocused.value = focused
+  }
+
+  private val _showSettings = MutableStateFlow(false)
+  override val showSettings: StateFlow<Boolean> = _showSettings.asStateFlow()
+  override fun toggleSettings() {
+    _showSettings.value = !_showSettings.value
   }
 
   override fun setEnabled(enabled: Boolean) {

@@ -73,6 +73,39 @@ object Keyboard {
     F11(0xEFC8),
     F12(0xEFC9),
 
+    // numpad navigation (NumLock off)
+    KP_Home(0xEF95),
+    KP_Left(0xEF96),
+    KP_Up(0xEF97),
+    KP_Right(0xEF98),
+    KP_Down(0xEF99),
+    KP_PageUp(0xEF9A),
+    KP_PageDown(0xEF9B),
+    KP_End(0xEF9C),
+    KP_Begin(0xEF9D),
+    KP_Insert(0xEF9E),
+    KP_Delete(0xEF9F),
+
+    // numpad keys (NumLock on)
+    KP_Enter(0xEF8D, "\n"),
+    KP_Multiply(0xEFAA, "*"),
+    KP_Add(0xEFAB, "+"),
+    KP_Separator(0xEFAC, ","),
+    KP_Subtract(0xEFAD, "-"),
+    KP_Decimal(0xEFAE, "."),
+    KP_Divide(0xEFAF, "/"),
+    KP_0(0xEFB0, "0"),
+    KP_1(0xEFB1, "1"),
+    KP_2(0xEFB2, "2"),
+    KP_3(0xEFB3, "3"),
+    KP_4(0xEFB4, "4"),
+    KP_5(0xEFB5, "5"),
+    KP_6(0xEFB6, "6"),
+    KP_7(0xEFB7, "7"),
+    KP_8(0xEFB8, "8"),
+    KP_9(0xEFB9, "9"),
+    KP_Equal(0xEFBD, "="),
+
     // media keys
     Mute(0xE0AD),           /* Mute toggle */
     VolumeDown(0xE0AE),     /* Volume down */

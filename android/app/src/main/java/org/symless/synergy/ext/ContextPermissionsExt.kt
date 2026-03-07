@@ -28,13 +28,12 @@
 package org.symless.synergy.ext
 
 import android.accessibilityservice.AccessibilityService
-import android.annotation.SuppressLint
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.RECEIVER_EXPORTED
 import android.content.Intent
+import android.os.Build
 import android.content.IntentFilter
 import android.provider.Settings
 import android.text.TextUtils
@@ -169,7 +168,11 @@ fun <T : Service> Context.registerForServiceConnectionEvents(
       }
 
     init {
-      registerReceiver(receiver, filter, RECEIVER_EXPORTED)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+      } else {
+        registerReceiver(receiver, filter)
+      }
     }
 
     private fun disposeReceiver() {
@@ -234,7 +237,11 @@ fun <T : Service> Context.registerForServiceDisconnectionEvents(
       }
 
     init {
-      registerReceiver(receiver, filter, RECEIVER_EXPORTED)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+      } else {
+        registerReceiver(receiver, filter)
+      }
     }
 
     override fun onDispose() {
@@ -255,7 +262,6 @@ fun Context.launchInputMethodServiceSettings() {
   startActivity(intent)
 }
 
-@SuppressLint("ObsoleteSdkInt")
 fun Context.enabledInputMethodServicesFromSettings(): List<String> {
   if (android.os.Build.VERSION.SDK_INT > 33) return emptyList()
   try {

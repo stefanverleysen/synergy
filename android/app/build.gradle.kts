@@ -59,7 +59,7 @@ android {
 
   defaultConfig {
     applicationId = "org.symless.synergy"
-    minSdk = 34
+    minSdk = 28
 
     versionCode = projectVersionCode
     versionName = projectVersionName

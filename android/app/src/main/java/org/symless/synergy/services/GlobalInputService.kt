@@ -42,9 +42,11 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.hardware.display.DisplayManager
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -360,7 +362,7 @@ class GlobalInputService : AccessibilityService() {
     text: String,
     customizer: (NotificationCompat.Builder.() -> Unit)? = null,
   ) {
-    if (
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
       ContextCompat.checkSelfPermission(
         this,
         Manifest.permission.POST_NOTIFICATIONS,
@@ -391,14 +393,24 @@ class GlobalInputService : AccessibilityService() {
       .notify(NOTIF_IME_NOT_SETUP_ID, notification)
   }
 
+  private fun getCurrentImeInfo(): InputMethodInfo? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      imeManager.currentInputMethodInfo
+    } else {
+      val currentImeId = Settings.Secure.getString(
+        contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD
+      )
+      imeManager.inputMethodList.find { it.id == currentImeId }
+    }
+  }
+
   private fun isSynergyKeyboardActive(
-    imeInfo: InputMethodInfo? = imeManager.currentInputMethodInfo
+    imeInfo: InputMethodInfo? = getCurrentImeInfo()
   ): Boolean {
     return imeInfo?.let { current -> synergyImeInfo?.id == current.id }
       ?: false
   }
 
-  @SuppressLint("NewApi")
   private fun checkIMESetup() {
     val kbOpen = isKeyboardOpened
     val kbWasOpen = keyboardWasOpen.load()
@@ -415,7 +427,7 @@ class GlobalInputService : AccessibilityService() {
 
     keyboardWasOpen.store(true)
 
-    val imeInfo = imeManager.currentInputMethodInfo
+    val imeInfo = getCurrentImeInfo()
     if (imeInfo != null) {
       log.debug { "Current IME: ${imeInfo.packageName}" }
       when {
@@ -536,7 +548,13 @@ class GlobalInputService : AccessibilityService() {
                     }
 
                   log.debug { "Clipboard variant ready: $variant" }
-                  clipboard.setPrimaryClip(clipData)
+                  // Only set if content actually changed (avoids Android 13+ clipboard popup)
+                  val currentClip = clipboard.primaryClip
+                  val currentText = currentClip?.getItemAt(0)?.text?.toString()
+                  val newText = clipData.getItemAt(0)?.text?.toString()
+                  if (currentText != newText) {
+                    clipboard.setPrimaryClip(clipData)
+                  }
                   break
                 }
               }

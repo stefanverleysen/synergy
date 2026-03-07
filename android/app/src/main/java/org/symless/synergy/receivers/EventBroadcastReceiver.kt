@@ -27,23 +27,34 @@ package org.symless.synergy.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import org.symless.synergy.client.ClientEventBus
 import org.symless.synergy.client.events.KeyboardEvent
 import org.symless.synergy.client.events.MouseEvent
 import org.symless.synergy.client.util.logging.KLoggingManager
+import java.io.Serializable
 
 class EventBroadcastReceiver() : BroadcastReceiver() {
+
+    @Suppress("DEPRECATION", "UNCHECKED_CAST")
+    private inline fun <reified T : Serializable> Intent.getSerializableCompat(name: String): T? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getSerializableExtra(name, T::class.java)
+        } else {
+            getSerializableExtra(name) as? T
+        }
+    }
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             ACTION_KEYBOARD -> {
                 ClientEventBus.emit(
-                    intent.getSerializableExtra("payload", KeyboardEvent::class.java)!!
+                    intent.getSerializableCompat<KeyboardEvent>("payload")!!
                 )
             }
             ACTION_MOUSE -> {
                 ClientEventBus.emit(
-                    intent.getSerializableExtra("payload", MouseEvent::class.java)!!
+                    intent.getSerializableCompat<MouseEvent>("payload")!!
                 )
             }
             else -> {

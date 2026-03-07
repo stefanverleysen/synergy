@@ -27,6 +27,7 @@
 package org.symless.synergy.ui.screens
 
 import android.content.Context
+import androidx.compose.animation.Crossfade
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -82,6 +83,8 @@ import org.symless.synergy.ui.components.LocalSnackbarHostState
 import org.symless.synergy.ui.components.PermissionsNeededDialog
 import org.symless.synergy.ui.components.AccessibilityServiceRestartDialog
 import org.symless.synergy.ui.components.RootNavHost
+import org.symless.synergy.ui.components.SetupStep
+import org.symless.synergy.ui.components.SetupWizard
 import org.symless.synergy.ui.components.FingerprintVerificationDialog
 import org.symless.synergy.ui.models.FingerprintVerificationState
 import org.symless.synergy.ui.components.currentDeviceConfig
@@ -175,52 +178,128 @@ fun RootScreen(appState: IAppState) {
             appState.permissionAccessibilityEnabled
               .collectAsStateWithLifecycle()
 
-          // REGULAR PERMISSIONS
+          // REGULAR PERMISSIONS (API 33+)
+          val needsRuntimePermissions =
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
           val notificationsPermissionState =
-            rememberPermissionState(
-              android.Manifest.permission.POST_NOTIFICATIONS
-            )
+            if (needsRuntimePermissions)
+              rememberPermissionState(
+                android.Manifest.permission.POST_NOTIFICATIONS
+              )
+            else null
           val nearbyDevicesPermissionState =
-            rememberPermissionState(
-              android.Manifest.permission.NEARBY_WIFI_DEVICES
-            )
+            if (needsRuntimePermissions)
+              rememberPermissionState(
+                android.Manifest.permission.NEARBY_WIFI_DEVICES
+              )
+            else null
 
-          if (!canDrawOverlays) {
-            PermissionsNeededDialog(
-              text = R.string.permission_dialog_overlay_message,
-              onClick = { context.requestOverlayPermission() },
-            )
-          } else if (!accessibilityEnabled) {
-            PermissionsNeededDialog(
-              text = R.string.permission_dialog_accessibility_service_message,
-              onClick = { context.requestAccessibilityEnabled() },
-            )
-          } else if (!imeEnabled) {
-            PermissionsNeededDialog(
-              text = R.string.permission_dialog_ime_enabled_message,
-              onClick = { context.launchInputMethodServiceSettings() },
-            )
-          } else if (!notificationsPermissionState.status.isGranted) {
-            PermissionsNeededDialog(
-              text = R.string.permission_dialog_notifications_message,
-              required = false,
-              onClick = {
-                notificationsPermissionState.launchPermissionRequest()
-              },
-            )
-          } else if (!nearbyDevicesPermissionState.status.isGranted) {
-            PermissionsNeededDialog(
-              text = R.string.permission_dialog_nearby_devices_message,
-              onClick = {
-                nearbyDevicesPermissionState.launchPermissionRequest()
-              },
+          // Count total required steps
+          val totalSteps = 3 +
+            (if (notificationsPermissionState != null && !notificationsPermissionState.status.isGranted) 1 else 0) +
+            (if (nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted) 1 else 0)
+
+          // Determine current step number (completed steps + 1)
+          val completedSteps =
+            (if (canDrawOverlays) 1 else 0) +
+            (if (canDrawOverlays && accessibilityEnabled) 1 else 0) +
+            (if (canDrawOverlays && accessibilityEnabled && imeEnabled) 1 else 0)
+
+          val allCoreGranted = canDrawOverlays && accessibilityEnabled && imeEnabled
+
+          if (!allCoreGranted || (notificationsPermissionState != null && !notificationsPermissionState.status.isGranted) || (nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted)) {
+            Crossfade(
+              targetState = completedSteps,
+              modifier = Modifier.padding(innerPadding).fillMaxSize(),
+              label = "setup-wizard",
+            ) { _ ->
+              when {
+                !canDrawOverlays -> SetupWizard(
+                  step = SetupStep(
+                    stepNumber = 1,
+                    totalSteps = totalSteps,
+                    title = "Allow Display Over Other Apps",
+                    instructions = listOf(
+                      "Tap the button below to open system settings.",
+                      "Find \"Synergy Android\" in the app list.",
+                      "Tap on it and toggle \"Allow display over other apps\" to ON.",
+                      "Press Back or switch back to Synergy Android.",
+                    ),
+                    buttonText = "Open Overlay Settings",
+                    isCompleted = false,
+                    onAction = { context.requestOverlayPermission() },
+                  ),
+                )
+                !accessibilityEnabled -> SetupWizard(
+                  step = SetupStep(
+                    stepNumber = 2,
+                    totalSteps = totalSteps,
+                    title = "Enable Accessibility Service",
+                    instructions = listOf(
+                      "Tap the button below to open Accessibility settings.",
+                      "Scroll down to \"Downloaded apps\" or \"Installed services\".",
+                      "Find \"Synergy Android\" and tap on it.",
+                      "Toggle the service ON and confirm the dialog.",
+                    ),
+                    buttonText = "Open Accessibility Settings",
+                    isCompleted = false,
+                    onAction = { context.requestAccessibilityEnabled() },
+                  ),
+                )
+                !imeEnabled -> SetupWizard(
+                  step = SetupStep(
+                    stepNumber = 3,
+                    totalSteps = totalSteps,
+                    title = "Enable Synergy Keyboard",
+                    instructions = listOf(
+                      "Tap the button below to open keyboard settings.",
+                      "Find \"Synergy\" in the list of keyboards.",
+                      "Toggle it ON and confirm any warning dialog.",
+                      "Synergy uses this to relay keystrokes from your server PC.",
+                    ),
+                    buttonText = "Open Keyboard Settings",
+                    isCompleted = false,
+                    onAction = { context.launchInputMethodServiceSettings() },
+                  ),
+                )
+                notificationsPermissionState != null && !notificationsPermissionState.status.isGranted -> SetupWizard(
+                  step = SetupStep(
+                    stepNumber = completedSteps + 1,
+                    totalSteps = totalSteps,
+                    title = "Allow Notifications",
+                    instructions = listOf(
+                      "Tap the button below to show the permission prompt.",
+                      "Tap \"Allow\" to let Synergy show connection status notifications.",
+                      "This keeps you informed when your devices connect or disconnect.",
+                    ),
+                    buttonText = "Grant Notification Permission",
+                    isCompleted = false,
+                    onAction = { notificationsPermissionState.launchPermissionRequest() },
+                  ),
+                )
+                nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted -> SetupWizard(
+                  step = SetupStep(
+                    stepNumber = completedSteps + 1,
+                    totalSteps = totalSteps,
+                    title = "Allow Nearby Device Discovery",
+                    instructions = listOf(
+                      "Tap the button below to show the permission prompt.",
+                      "Tap \"Allow\" so Synergy can find your server on the network.",
+                      "This is needed for automatic server discovery.",
+                    ),
+                    buttonText = "Grant Nearby Devices Permission",
+                    isCompleted = false,
+                    onAction = { nearbyDevicesPermissionState.launchPermissionRequest() },
+                  ),
+                )
+              }
+            }
+          } else {
+            RootNavHost(
+              appState = appState,
+              modifier = Modifier.padding(innerPadding).fillMaxHeight(),
             )
           }
-
-          RootNavHost(
-            appState = appState,
-            modifier = Modifier.padding(innerPadding).fillMaxHeight(),
-          )
         }
       }
     }

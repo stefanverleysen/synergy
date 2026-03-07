@@ -29,6 +29,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.inputmethodservice.InputMethodService
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
@@ -189,6 +191,8 @@ class VirtualKeyboardService : InputMethodService() {
   private lateinit var keyboardActions:
     Map<VirtualKeyboardAction, EditorKeyboardAction>
 
+  private val mainHandler = Handler(Looper.getMainLooper())
+
   private val app
     get() = application as Application
 
@@ -257,7 +261,7 @@ class VirtualKeyboardService : InputMethodService() {
       ConnectionServiceClient(this) { event ->
         when (event) {
           is KeyboardEvent -> {
-            onKeyboardEvent(event)
+            mainHandler.post { onKeyboardEvent(event) }
           }
 
           else -> {
@@ -376,54 +380,16 @@ class VirtualKeyboardService : InputMethodService() {
 
   override fun onCreateInputView(): View {
     log.debug { "onCreateInputView" }
-    val win = window.window ?: return super.onCreateInputView()
-    WindowCompat.setDecorFitsSystemWindows(win, false)
-    keyboardViewLifecycleOwner.attachToDecorView(win.decorView)
-    WindowCompat.setDecorFitsSystemWindows(win, false)
-    val view = ComposeView(this)
-
-    view.setViewTreeLifecycleOwner(keyboardViewLifecycleOwner)
-    view.setViewTreeViewModelStoreOwner(keyboardViewLifecycleOwner)
-    view.setViewTreeSavedStateRegistryOwner(keyboardViewLifecycleOwner)
-
-    // win.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
-    // win.decorView.background  =
-    // android.graphics.Color.TRANSPARENT.toDrawable()
-    // view.background  = android.graphics.Color.TRANSPARENT.toDrawable()
-    view.setContent {
-      val state = rememberAppState(serviceClient)
-      val remainingInsets = remember { MutableWindowInsets() }
-      val safeContent = WindowInsets.safeContent
-      Box(
-        Modifier
-          // .background(Color.Transparent)
-          .navigationBarsPadding()
-          .onConsumedWindowInsetsChanged { consumedWindowInsets ->
-            remainingInsets.insets = safeContent.exclude(consumedWindowInsets)
-          }
-      ) { // padding can be used without recomposition when insets change.
-        val padding = remainingInsets.asPaddingValues()
-        Box(
-          modifier =
-            Modifier
-              // .background(Color.Transparent)
-              .padding(
-                top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding(),
-                start = 0.dp,
-                end = 0.dp,
-              )
-        ) {
-          VirtualKeyboardView(state)
-        }
-      }
-    }
-
+    // Invisible zero-height view -- Synergy IME is a relay, not a visible keyboard
+    val view = View(this)
+    view.layoutParams = android.view.ViewGroup.LayoutParams(
+      android.view.ViewGroup.LayoutParams.MATCH_PARENT, 0
+    )
     return view
   }
 
   fun currentExtractedTest(): ExtractedText? {
-    return currentInputConnection.getExtractedText(ExtractedTextRequest(), 0)
+    return currentInputConnection?.getExtractedText(ExtractedTextRequest(), 0)
   }
 
   private fun applyCommand(

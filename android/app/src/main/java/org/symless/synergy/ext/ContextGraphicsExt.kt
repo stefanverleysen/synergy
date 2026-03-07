@@ -26,14 +26,14 @@ package org.symless.synergy.ext
 
 import android.content.Context
 import android.hardware.display.DisplayManager
-import android.view.Display
+import android.view.WindowManager
 import org.symless.synergy.client.models.Size
 import org.symless.synergy.client.models.SizeF
 
 data class ScreenSize(val px: Size, val dp: SizeF, val scale: Float)
 
 /**
- * Get the screen size for a specific display.
+ * Get the full screen size including navigation bar area.
  *
  * @param displayId The ID of the display to get metrics for. If null, uses the context's display.
  * @return ScreenSize containing pixel dimensions, dp dimensions, and scale factor.
@@ -47,11 +47,12 @@ fun Context.getScreenSize(displayId: Int? = null): ScreenSize {
         this
     }
 
-    // Now use resources.displayMetrics from the correct context
-    val dm = displayContext.resources.displayMetrics
-    val widthPx = dm.widthPixels
-    val heightPx = dm.heightPixels
-    val widthDp = widthPx / dm.density
-    val heightDp = heightPx / dm.density
+    val wm = displayContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    val bounds = wm.maximumWindowMetrics.bounds
+    val widthPx = bounds.width()
+    val heightPx = bounds.height()
+    val density = displayContext.resources.displayMetrics.density
+    val widthDp = widthPx / density
+    val heightDp = heightPx / density
     return ScreenSize(Size(widthPx, heightPx), SizeF(widthDp, heightDp), widthPx.toFloat() / widthDp)
 }

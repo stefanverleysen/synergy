@@ -117,19 +117,6 @@ fun LogsViewerWidget(
           },
         )
 
-        SynergyToggleIconButton(
-          checked = autoScrollEnabled,
-          icon = { isChecked ->
-            Icon(
-              if (isChecked) Icons.Outlined.KeyboardArrowDown
-              else Icons.Filled.KeyboardArrowDown,
-              contentDescription =
-                stringResource(R.string.log_widget_toolbar_scroll_to_bottom),
-            )
-          },
-          onCheckChange = { autoScrollEnabled = it },
-        )
-
         FilledTonalButton(
           onClick = { filterExpanded = true },
           contentPadding = PaddingValues(1.dp),
