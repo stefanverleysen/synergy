@@ -49,6 +49,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
@@ -79,6 +82,7 @@ import org.symless.synergy.client.util.logging.KLoggingManager
 import org.symless.synergy.components.GlobalKeyboardManager
 import org.symless.synergy.ext.canDrawOverlays
 import org.symless.synergy.ext.getScreenSize
+import org.symless.synergy.ext.isTelevision
 import org.symless.synergy.ext.sendServiceConnectionEvent
 import org.symless.synergy.ext.sendServiceDisconnectionEvent
 
@@ -87,6 +91,11 @@ import org.symless.synergy.ext.sendServiceDisconnectionEvent
 class GlobalInputService : AccessibilityService() {
 
   private var pickerShownForPackage: String? = null
+
+  private val isTV by lazy { applicationContext.isTelevision() }
+
+  private val inputHelper = InputHelperClient()
+  @Volatile private var helperConnectAttempted = false
 
   /** Client responsible for communicating with the connection service. */
   private lateinit var serviceClient: ConnectionServiceClient
@@ -459,20 +468,15 @@ class GlobalInputService : AccessibilityService() {
           }
         }
         else -> {
-          log.debug {
-            "IME is enabled, but not active. Previous picker was shown for package $pickerShownForPackage"
-          }
-
           pickerShownForPackage = activePackageName
           val imeId = synergyImeInfo?.id
           if (
             imeId != null && softKeyboardController.switchToInputMethod(imeId)
           ) {
             log.debug { "softKeyboardController set IME to $imeId" }
-            return
+          } else {
+            log.debug { "Could not auto-switch to Synergy IME, skipping picker" }
           }
-
-          imeManager.showInputMethodPicker()
         }
       }
     } else {
@@ -493,14 +497,22 @@ class GlobalInputService : AccessibilityService() {
     keyboardManager = GlobalKeyboardManager(this)
     serviceScope.launch {
       keyboardManager.actionFlow.collect { action ->
-        log.debug { "Triggered Action: ${action.label}(${action.actionId})" }
-        when (action.actionId) {
-          GLOBAL_ACTION_DPAD_CENTER -> {
-            clickFocused()
-          }
-
-          else -> {
-            performGlobalAction(action.actionId)
+        log.info { "Action: ${action.label}(${action.actionId})" }
+        if (isTV && inputHelper.isConnected) {
+          handleActionViaHelper(action.actionId)
+        } else {
+          when (action.actionId) {
+            in 16..19 -> {
+              if (isTV) navigateFocusTV(action.actionId)
+            }
+            20 -> clickFocused()
+            21 -> {
+              if (isTV && !performGlobalAction(action.actionId)) clickFocused()
+            }
+            else -> {
+              val ok = performGlobalAction(action.actionId)
+              log.info { "performGlobalAction(${action.actionId} ${action.label})=$ok" }
+            }
           }
         }
       }
@@ -611,9 +623,13 @@ class GlobalInputService : AccessibilityService() {
       // Release existing lock if any
       releaseWifiLowLatencyLock()
 
-      // Create and acquire new low latency WiFi lock
+      // WIFI_MODE_FULL_LOW_LATENCY requires API 29+
+      val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+      else
+        @Suppress("DEPRECATION") WifiManager.WIFI_MODE_FULL_HIGH_PERF
       wifiLowLatencyLock = wifiManager.createWifiLock(
-        WifiManager.WIFI_MODE_FULL_LOW_LATENCY,
+        mode,
         "SynergyLowLatency"
       ).apply {
         acquire()
@@ -639,6 +655,27 @@ class GlobalInputService : AccessibilityService() {
     }
   }
 
+  private fun tryConnectHelper() {
+    if (inputHelper.isConnected) return
+    if (inputHelper.connect()) {
+      log.info { "Input helper connected -- real input injection enabled" }
+      return
+    }
+
+    // Helper not running -- try to start it via local ADB (Fire TV has ADB TCP on localhost:5555)
+    log.info { "Helper not running, attempting auto-start via local ADB" }
+    val adb = org.symless.synergy.helper.AdbClient(applicationContext)
+    if (adb.startHelperIfNeeded()) {
+      // Give it a moment to start listening
+      Thread.sleep(2000)
+      if (inputHelper.connect()) {
+        log.info { "Helper auto-started and connected via local ADB" }
+        return
+      }
+    }
+    log.info { "Could not auto-start helper -- using accessibility fallback" }
+  }
+
   /**
    * Monitor connection state and reset IME-related state when disconnected.
    * Also manages mouse pointer visibility based on screen active state.
@@ -660,6 +697,9 @@ class GlobalInputService : AccessibilityService() {
 
         if (shouldShowPointer) {
           log.info { "Cursor entered this client, showing mouse pointer" }
+          if (isTV && !inputHelper.isConnected) {
+            launch(Dispatchers.IO) { tryConnectHelper() }
+          }
           withContext(Dispatchers.Main) {
             showMousePointer()
           }
@@ -685,6 +725,29 @@ class GlobalInputService : AccessibilityService() {
           keyboardWasOpen.store(false)
         }
       }
+    }
+  }
+
+  private fun handleActionViaHelper(actionId: Int) {
+    val keyCode = when (actionId) {
+      16 -> KeyEvent.KEYCODE_DPAD_UP
+      17 -> KeyEvent.KEYCODE_DPAD_DOWN
+      18 -> KeyEvent.KEYCODE_DPAD_LEFT
+      19 -> KeyEvent.KEYCODE_DPAD_RIGHT
+      20 -> KeyEvent.KEYCODE_DPAD_CENTER
+      21 -> KeyEvent.KEYCODE_MENU
+      1 -> KeyEvent.KEYCODE_BACK
+      2 -> KeyEvent.KEYCODE_HOME
+      3 -> KeyEvent.KEYCODE_APP_SWITCH
+      else -> {
+        val ok = performGlobalAction(actionId)
+        log.info { "performGlobalAction($actionId)=$ok (helper mode, no keycode mapping)" }
+        return
+      }
+    }
+    serviceScope.launch(Dispatchers.IO) {
+      inputHelper.sendKey(keyCode, KeyEvent.ACTION_DOWN)
+      inputHelper.sendKey(keyCode, KeyEvent.ACTION_UP)
     }
   }
 
@@ -736,6 +799,7 @@ class GlobalInputService : AccessibilityService() {
     // Broadcast that the service is disconnected
     sendServiceDisconnectionEvent<GlobalInputService>()
 
+    inputHelper.disconnect()
     serviceScope.cancel()
     serviceClient.unbind()
     hideMousePointer()  // Use the safe hide method instead of direct removeView
@@ -1254,6 +1318,12 @@ class GlobalInputService : AccessibilityService() {
    * > Example: Used for mouse movement and clicking in the global input service.
    */
   private fun onMouseEvent(event: MouseEvent) {
+    // On TV, use native mouse input injection instead of touch gestures
+    if (isTV) {
+      onMouseEventTV(event)
+      return
+    }
+
     when (event.type) {
       MouseEvent.Type.Move -> {
         val currentX = event.x
@@ -1727,11 +1797,13 @@ class GlobalInputService : AccessibilityService() {
 
       // Get the active display and its WindowManager
       val activeDisplay = getActiveDisplay()
-      val displayContext = createDisplayContext(activeDisplay)
-      windowManager = displayContext.getSystemService(WINDOW_SERVICE) as WindowManager
-
-      // Update active display ID for gesture dispatching
       activeDisplayId = activeDisplay.displayId
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val displayContext = createDisplayContext(activeDisplay)
+        windowManager = displayContext.getSystemService(WINDOW_SERVICE) as WindowManager
+      } else {
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+      }
 
       log.debug { "Reinitialized WindowManager for display ID: ${activeDisplay.displayId}" }
 
@@ -1751,11 +1823,7 @@ class GlobalInputService : AccessibilityService() {
       mousePointerLayout.x = oldX
       mousePointerLayout.y = oldY
 
-      // Verify we can actually use this by checking overlay permission
-      if (!canDrawOverlays()) {
-        log.warn { "Cannot reinitialize - overlay permission not granted" }
-        return false
-      }
+      // TYPE_ACCESSIBILITY_OVERLAY does not require SYSTEM_ALERT_WINDOW permission
 
       log.info { "Mouse pointer reinitialized successfully" }
       return true
@@ -1782,10 +1850,7 @@ class GlobalInputService : AccessibilityService() {
       return
     }
 
-    if (!canDrawOverlays()) {
-      log.warn { "Cannot show mouse pointer - overlay permission not granted" }
-      return
-    }
+    // TYPE_ACCESSIBILITY_OVERLAY does not require SYSTEM_ALERT_WINDOW permission
 
     // Log display configuration before showing pointer
     log.info { "Attempting to show mouse pointer - checking display configuration" }
@@ -1813,6 +1878,10 @@ class GlobalInputService : AccessibilityService() {
       mousePointerVisible = true
       screenWakelockManager.onInputActivity()
       log.info { "Mouse pointer shown on display $targetDisplayId" }
+    } catch (err: IllegalStateException) {
+      // View already added (race between onServiceConnected and monitorConnectionState)
+      log.debug { "Mouse pointer view already added: ${err.message}" }
+      mousePointerVisible = true
     } catch (err: android.view.WindowManager.BadTokenException) {
       log.error(err) { "BadTokenException when showing mouse pointer - window manager token invalid, attempting reinitialize" }
       mousePointerVisible = false
@@ -1856,6 +1925,197 @@ class GlobalInputService : AccessibilityService() {
       log.error(err) { "Error hiding mouse pointer" }
       // Mark as not visible even if removal failed (view may already be detached)
       mousePointerVisible = false
+    }
+  }
+
+  /**
+   * Inject a key event system-wide using the shell input command.
+   * Used on TV devices where touch gestures don't work for navigation.
+   */
+  private fun injectKeyEvent(keyCode: Int) {
+    log.info { "Injecting key event: $keyCode (TV mode)" }
+    serviceScope.launch(Dispatchers.IO) {
+      try {
+        Runtime.getRuntime().exec(arrayOf("input", "keyevent", keyCode.toString()))
+      } catch (err: Exception) {
+        log.error(err) { "Failed to inject key event $keyCode" }
+      }
+    }
+  }
+
+  /**
+   * Inject a shell input command for mouse/touch events on TV.
+   * Runs on IO dispatcher to avoid blocking the main thread.
+   */
+  private fun injectInputCommand(vararg args: String) {
+    serviceScope.launch(Dispatchers.IO) {
+      try {
+        Runtime.getRuntime().exec(arrayOf("input", *args))
+      } catch (err: Exception) {
+        log.error(err) { "Failed to inject input command: ${args.joinToString(" ")}" }
+      }
+    }
+  }
+
+  /**
+   * Handle mouse events on TV devices.
+   * Injects real system-level mouse/key events so the OS treats them
+   * as coming from a physical mouse.
+   */
+  private fun onMouseEventTV(event: MouseEvent) {
+    val helper = if (inputHelper.isConnected) inputHelper else null
+
+    when (event.type) {
+      MouseEvent.Type.Move -> {
+        moveMousePointer(event.x, event.y)
+        screenWakelockManager.onInputActivity()
+        if (helper != null) {
+          serviceScope.launch(Dispatchers.IO) {
+            helper.sendMouseMove(event.x, event.y)
+          }
+        }
+      }
+      MouseEvent.Type.MoveRelative -> {
+        val newX = mousePointerLayout.x + event.x
+        val newY = mousePointerLayout.y + event.y
+        moveMousePointer(newX, newY)
+        screenWakelockManager.onInputActivity()
+        if (helper != null) {
+          serviceScope.launch(Dispatchers.IO) {
+            helper.sendMouseMove(newX, newY)
+          }
+        }
+      }
+      MouseEvent.Type.Down -> {
+        if (helper != null) {
+          val x = mousePointerLayout.x
+          val y = mousePointerLayout.y
+          val btn = event.id.toInt()
+          serviceScope.launch(Dispatchers.IO) {
+            helper.sendMouseDown(x, y, btn)
+          }
+        }
+      }
+      MouseEvent.Type.Up -> {
+        if (helper != null) {
+          val x = mousePointerLayout.x
+          val y = mousePointerLayout.y
+          val btn = event.id.toInt()
+          serviceScope.launch(Dispatchers.IO) {
+            helper.sendMouseUp(x, y, btn)
+          }
+        } else {
+          when (event.id.toInt()) {
+            1 -> injectClick(mousePointerLayout.x, mousePointerLayout.y)
+            3 -> performGlobalAction(GLOBAL_ACTION_BACK)
+            4 -> performGlobalAction(GLOBAL_ACTION_BACK)
+            5 -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+          }
+        }
+      }
+      MouseEvent.Type.Wheel -> {
+        if (abs(event.y) < 30 && abs(event.x) < 30) return
+        if (helper != null) {
+          val x = mousePointerLayout.x
+          val y = mousePointerLayout.y
+          val hscroll = if (abs(event.x) >= 30) event.x else 0
+          val vscroll = if (abs(event.y) >= 30) event.y else 0
+          serviceScope.launch(Dispatchers.IO) {
+            helper.sendScroll(x, y, hscroll, vscroll)
+          }
+        } else {
+          scrollSwipe(up = event.y > 0, delta = abs(event.y))
+        }
+      }
+    }
+  }
+
+  private var injectMethodCache: java.lang.reflect.Method? = null
+
+  /**
+   * Click on TV -- same as pressing Enter/Select on a remote.
+   */
+  private fun injectClick(x: Int, y: Int) {
+    clickFocused()
+  }
+
+  private fun getInjectMethod(): java.lang.reflect.Method? {
+    if (injectMethodCache != null) return injectMethodCache
+    return try {
+      val im = getSystemService(android.content.Context.INPUT_SERVICE) as android.hardware.input.InputManager
+      im.javaClass.getMethod(
+        "injectInputEvent",
+        android.view.InputEvent::class.java,
+        Int::class.javaPrimitiveType
+      ).also { injectMethodCache = it }
+    } catch (e: Exception) {
+      log.error(e) { "Cannot find InputManager.injectInputEvent" }
+      null
+    }
+  }
+
+  private fun makeMouseEvent(
+    action: Int, x: Float, y: Float, downTime: Long, eventTime: Long, buttonState: Int
+  ): MotionEvent {
+    val props = arrayOf(MotionEvent.PointerProperties().apply {
+      id = 0
+      toolType = MotionEvent.TOOL_TYPE_MOUSE
+    })
+    val coords = arrayOf(MotionEvent.PointerCoords().apply {
+      this.x = x
+      this.y = y
+      pressure = if (action == MotionEvent.ACTION_UP) 0f else 1f
+      size = 1f
+    })
+    return MotionEvent.obtain(
+      downTime, eventTime, action,
+      1, props, coords,
+      0, buttonState,
+      1f, 1f, 0, 0,
+      InputDevice.SOURCE_MOUSE, 0
+    )
+  }
+
+  private fun injectMotionClick(x: Float, y: Float): Boolean {
+    val method = getInjectMethod() ?: return false
+    val im = getSystemService(android.content.Context.INPUT_SERVICE) as android.hardware.input.InputManager
+    return try {
+      val now = android.os.SystemClock.uptimeMillis()
+
+      // Hover to position first so system knows where the pointer is
+      val hover = makeMouseEvent(MotionEvent.ACTION_HOVER_MOVE, x, y, now, now, 0)
+      method.invoke(im, hover, 0)
+      hover.recycle()
+
+      val down = makeMouseEvent(MotionEvent.ACTION_DOWN, x, y, now, now + 5, MotionEvent.BUTTON_PRIMARY)
+      val up = makeMouseEvent(MotionEvent.ACTION_UP, x, y, now, now + 25, 0)
+
+      val r1 = method.invoke(im, down, 0) as Boolean
+      val r2 = method.invoke(im, up, 0) as Boolean
+      down.recycle()
+      up.recycle()
+      log.info { "Injected mouse click at ($x, $y): down=$r1 up=$r2" }
+      r1
+    } catch (e: Exception) {
+      log.error(e) { "injectInputEvent failed: ${e.message}" }
+      false
+    }
+  }
+
+  fun injectKeyEventTV(keyCode: Int): Boolean {
+    val method = getInjectMethod() ?: return false
+    val im = getSystemService(android.content.Context.INPUT_SERVICE) as android.hardware.input.InputManager
+    return try {
+      val now = android.os.SystemClock.uptimeMillis()
+      val down = KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0, -1, 0, 0, InputDevice.SOURCE_KEYBOARD)
+      val up = KeyEvent(now, now + 20, KeyEvent.ACTION_UP, keyCode, 0, 0, -1, 0, 0, InputDevice.SOURCE_KEYBOARD)
+      val r1 = method.invoke(im, down, 0) as Boolean
+      val r2 = method.invoke(im, up, 0) as Boolean
+      log.info { "Injected key $keyCode: down=$r1 up=$r2" }
+      r1
+    } catch (e: Exception) {
+      log.error(e) { "injectKeyEvent failed: ${e.message}" }
+      false
     }
   }
 
@@ -1937,11 +2197,16 @@ class GlobalInputService : AccessibilityService() {
     isServiceConnected = true
     log.info { "Accessibility service connected, window overlays now available" }
 
-    // Now that service is connected, initialize WindowManager for the active display
+    // Initialize WindowManager for the active display
+    // On API < 30, createDisplayContext loses the accessibility token, so use the service's own WM
     val activeDisplay = getActiveDisplay()
-    val displayContext = createDisplayContext(activeDisplay)
-    windowManager = displayContext.getSystemService(WINDOW_SERVICE) as WindowManager
     activeDisplayId = activeDisplay.displayId
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      val displayContext = createDisplayContext(activeDisplay)
+      windowManager = displayContext.getSystemService(WINDOW_SERVICE) as WindowManager
+    } else {
+      windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+    }
     log.info { "Initialized WindowManager for display ID: $activeDisplayId" }
 
     // Update screen dimensions to ConnectionService now that we know the active display
@@ -1951,6 +2216,13 @@ class GlobalInputService : AccessibilityService() {
       log.info { "Successfully initialized server with screen dimensions: ${screenSize.px.width}x${screenSize.px.height} for display $activeDisplayId" }
     } else {
       log.warn { "Failed to initialize server with screen dimensions: ${result?.message}" }
+    }
+
+    // If cursor was supposed to be showing but was blocked by isServiceConnected=false, show it now
+    val state = serviceClient.stateFlow.value
+    if (state.isConnected && state.isEnabled && state.screen.isActive && !mousePointerVisible) {
+      log.info { "Cursor should be visible but was blocked, showing now" }
+      showMousePointer()
     }
 
     val imeId = synergyImeInfo
@@ -2022,14 +2294,172 @@ class GlobalInputService : AccessibilityService() {
    */
   private fun clickFocused() {
     val focusedNode = findFocus(FOCUS_INPUT)
-    // val focusedNode =
-    // rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY)
     if (focusedNode != null) {
       logNodeHierarchy(focusedNode, 0)
       focusedNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     } else {
       log.warn { "No focused node found to click" }
     }
+  }
+
+  /**
+   * Click the UI element at the given screen coordinates using the accessibility
+   * node tree. Searches all windows, walks up to find a clickable ancestor.
+   * Falls back to tapGesture if no clickable node is found.
+   */
+  private fun clickNodeAtPosition(x: Int, y: Int) {
+    val allWindows = try { windows } catch (_: Exception) { null }
+    if (allWindows == null) {
+      log.warn { "No windows available, falling back to tap at ($x, $y)" }
+      tapGesture(x.toFloat(), y.toFloat())
+      return
+    }
+
+    // Collect ALL clickable nodes at this position across all windows
+    val clickableNodes = mutableListOf<Pair<AccessibilityNodeInfo, Rect>>()
+    for (window in allWindows) {
+      if (window.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY) continue
+      val root = window.root ?: continue
+      collectClickableNodesAtPoint(root, x, y, clickableNodes)
+    }
+
+    if (clickableNodes.isEmpty()) {
+      log.warn { "No clickable node at ($x, $y), falling back to tap" }
+      tapGesture(x.toFloat(), y.toFloat())
+      return
+    }
+
+    // Pick the smallest (most specific) clickable node by area
+    val best = clickableNodes.minByOrNull { (_, b) -> b.width().toLong() * b.height().toLong() }!!
+    log.info { "Clicking smallest node at ($x, $y): ${best.first.className} bounds=${best.second} text=${best.first.text} (${clickableNodes.size} candidates)" }
+    best.first.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+  }
+
+  private fun collectClickableNodesAtPoint(
+    node: AccessibilityNodeInfo, x: Int, y: Int,
+    result: MutableList<Pair<AccessibilityNodeInfo, Rect>>
+  ) {
+    val bounds = Rect()
+    node.getBoundsInScreen(bounds)
+    if (!bounds.contains(x, y)) return
+
+    if (node.isClickable) {
+      result.add(node to Rect(bounds))
+    }
+
+    for (i in 0 until node.childCount) {
+      val child = node.getChild(i) ?: continue
+      collectClickableNodesAtPoint(child, x, y, result)
+    }
+  }
+
+  /**
+   * Navigate focus in a direction using the accessibility node tree.
+   * Finds the currently focused node, collects all focusable nodes, and
+   * moves focus to the nearest one in the requested direction.
+   */
+  private fun navigateFocusTV(directionActionId: Int) {
+    val root = rootInActiveWindow ?: return
+
+    val focused = findFocus(FOCUS_INPUT)
+    if (focused == null) {
+      val first = findFirstFocusableNode(root)
+      if (first != null) {
+        log.info { "No focus, focusing first node: ${first.className}" }
+        first.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+      }
+      return
+    }
+
+    val srcBounds = Rect().also { focused.getBoundsInScreen(it) }
+
+    val candidates = mutableListOf<Pair<AccessibilityNodeInfo, Rect>>()
+    collectFocusableNodes(root, candidates, focused)
+
+    val inDirection = candidates.filter { (_, bounds) ->
+      // Skip parent containers that enclose the current focus
+      if (bounds.contains(srcBounds)) return@filter false
+      when (directionActionId) {
+        16 -> bounds.centerY() < srcBounds.centerY()
+        17 -> bounds.centerY() > srcBounds.centerY()
+        18 -> bounds.centerX() < srcBounds.centerX()
+        19 -> bounds.centerX() > srcBounds.centerX()
+        else -> false
+      }
+    }
+
+    val best = inDirection.minByOrNull { (_, bounds) ->
+      val dx = abs(bounds.centerX() - srcBounds.centerX()).toDouble()
+      val dy = abs(bounds.centerY() - srcBounds.centerY()).toDouble()
+      when (directionActionId) {
+        16, 17 -> dy + dx * 2.0
+        18, 19 -> dx + dy * 2.0
+        else -> sqrt(dx * dx + dy * dy)
+      }
+    }
+
+    if (best != null) {
+      val dir = when (directionActionId) {
+        16 -> "UP"; 17 -> "DOWN"; 18 -> "LEFT"; 19 -> "RIGHT"; else -> "?"
+      }
+      log.info { "Focus $dir -> ${best.first.className} bounds=${best.second}" }
+      best.first.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+    } else {
+      // No focusable node in this direction -- scroll the parent container
+      val scrollable = findScrollableAncestor(focused)
+      if (scrollable != null) {
+        val action = when (directionActionId) {
+          16, 18 -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+          17, 19 -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+          else -> null
+        }
+        if (action != null) {
+          val ok = scrollable.performAction(action)
+          val dir = when (directionActionId) {
+            16 -> "UP"; 17 -> "DOWN"; 18 -> "LEFT"; 19 -> "RIGHT"; else -> "?"
+          }
+          log.info { "No node $dir, scrolled container: $ok" }
+        }
+      }
+    }
+  }
+
+  private fun findScrollableAncestor(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+    var current = node.parent
+    var depth = 0
+    while (current != null && depth < 20) {
+      if (current.isScrollable) return current
+      current = current.parent
+      depth++
+    }
+    return null
+  }
+
+  private fun collectFocusableNodes(
+    node: AccessibilityNodeInfo,
+    result: MutableList<Pair<AccessibilityNodeInfo, Rect>>,
+    exclude: AccessibilityNodeInfo? = null,
+  ) {
+    if (node != exclude && node.isFocusable && node.isVisibleToUser) {
+      val bounds = Rect()
+      node.getBoundsInScreen(bounds)
+      if (!bounds.isEmpty) {
+        result.add(node to bounds)
+      }
+    }
+    for (i in 0 until node.childCount) {
+      node.getChild(i)?.let { collectFocusableNodes(it, result, exclude) }
+    }
+  }
+
+  private fun findFirstFocusableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+    if (node.isFocusable && node.isVisibleToUser) return node
+    for (i in 0 until node.childCount) {
+      val child = node.getChild(i) ?: continue
+      val found = findFirstFocusableNode(child)
+      if (found != null) return found
+    }
+    return null
   }
 
   /// **

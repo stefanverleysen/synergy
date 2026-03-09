@@ -32,8 +32,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import java.io.Serializable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -139,22 +141,22 @@ class ConnectionServiceClient(
         }
         val message = when (clazzName) {
           LogRecordEvent::class.java.name -> {
-            val logRecord = bundle.getSerializable("message", LogRecordEvent::class.java)!!
+            val logRecord = bundle.getSerializableCompat<LogRecordEvent>("message")!!
             addLogRecord(logRecord)
 
             return
           }
 
           ScreenEvent.SetClipboard::class.java.name -> {
-            bundle.getSerializable("message", ScreenEvent.SetClipboard::class.java)
+            bundle.getSerializableCompat<ScreenEvent.SetClipboard>("message")
           }
 
           KeyboardEvent::class.java.name -> {
-            bundle.getSerializable("message", KeyboardEvent::class.java)
+            bundle.getSerializableCompat<KeyboardEvent>("message")
           }
 
           MouseEvent::class.java.name -> {
-            bundle.getSerializable("message", MouseEvent::class.java)
+            bundle.getSerializableCompat<MouseEvent>("message")
           }
 
           else -> {
@@ -277,5 +279,14 @@ class ConnectionServiceClient(
 
   fun clearLogRecords() {
     logRecordsEditableFlow.value = emptyList()
+  }
+
+  @Suppress("DEPRECATION", "UNCHECKED_CAST")
+  private inline fun <reified T : Serializable> Bundle.getSerializableCompat(name: String): T? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      getSerializable(name, T::class.java)
+    } else {
+      getSerializable(name) as? T
+    }
   }
 }

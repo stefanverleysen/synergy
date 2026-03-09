@@ -51,7 +51,7 @@ class AndroidForwardingLogger(override val name: String) : KLogger {
             return forwardingEnabledStorage.exchange(enabled)
         }
 
-        private val forwardingLevelStorage = AtomicReference(if (BuildConfig.DEBUG) Level.TRACE else Level.INFO)
+        private val forwardingLevelStorage = AtomicReference(Level.TRACE)
         var forwardingLevel: Level
             get() = forwardingLevelStorage.load()
             set(value) = forwardingLevelStorage.store(value)
@@ -90,6 +90,7 @@ class AndroidForwardingLogger(override val name: String) : KLogger {
     }
 
     override fun isLoggingEnabledFor(level: Level, marker: Marker?): Boolean {
+        if (forwardingEnabled && level >= forwardingLevel) return true
         return when (level) {
             Level.TRACE -> Log.isLoggable(name, Log.VERBOSE)
             Level.DEBUG -> Log.isLoggable(name, Log.DEBUG)

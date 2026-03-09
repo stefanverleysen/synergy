@@ -32,8 +32,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import java.io.Serializable
 import android.os.RemoteCallbackList
 import arrow.core.raise.catch
 import io.github.oshai.kotlinlogging.Level
@@ -62,6 +64,7 @@ import org.symless.synergy.client.events.ScreenEvent
 import org.symless.synergy.client.ext.toDebugString
 import org.symless.synergy.client.manager.ClipboardSendManager
 import org.symless.synergy.client.models.ClipboardData
+import org.symless.synergy.client.models.SERVER_DEFAULT_SCREEN_NAME
 import org.symless.synergy.client.net.CertificateFingerprint
 import org.symless.synergy.client.net.FingerprintVerificationCallback
 import org.symless.synergy.client.util.logging.KLoggingManager
@@ -265,7 +268,7 @@ class ConnectionService : Service() {
             }
           }
 
-          val clipboardData = bundle.getSerializable("clipboardData",ClipboardData::class.java)
+          val clipboardData = bundle.getSerializableCompat<ClipboardData>("clipboardData")
           require(clipboardData != null) {
             "clipboardData was not valid in clipboard data bundle"
           }
@@ -690,7 +693,8 @@ class ConnectionService : Service() {
           Level.entries.find { level -> level.name == levelName } ?: Level.INFO
         }
 
-      AndroidForwardingLogger.forwardingLevel = forwardingLevel
+      // Always use TRACE to ensure in-app log viewer captures all logs
+      AndroidForwardingLogger.forwardingLevel = Level.TRACE
 
       log.info {
         "AppPrefs changed: forwardingLevel=${AndroidForwardingLogger.forwardingLevel}"
@@ -768,7 +772,21 @@ class ConnectionService : Service() {
 
     // Restore state from preferences synchronously before starting the state update job
     runBlocking {
-      val appPrefs = appPrefsStore.data.first()
+      var appPrefs = appPrefsStore.data.first()
+
+      // On first install, use the device model name instead of generic default
+      if (appPrefs.screen.name == SERVER_DEFAULT_SCREEN_NAME) {
+        val deviceName = android.os.Build.MODEL
+          .replace("\\s+".toRegex(), "-")
+          .replace("[^a-zA-Z0-9\\-]".toRegex(), "")
+        appPrefsStore.updateData { prefs ->
+          prefs.copy {
+            screen = prefs.screen.copy { name = deviceName }
+          }
+        }
+        appPrefs = appPrefsStore.data.first()
+      }
+
       connectionStateModel.updateScreenFromAppPrefs(appPrefs)
 
       // Restore the isEnabled state from preferences
@@ -852,5 +870,14 @@ class ConnectionService : Service() {
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     return START_STICKY
+  }
+
+  @Suppress("DEPRECATION", "UNCHECKED_CAST")
+  private inline fun <reified T : Serializable> Bundle.getSerializableCompat(name: String): T? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      getSerializable(name, T::class.java)
+    } else {
+      getSerializable(name) as? T
+    }
   }
 }

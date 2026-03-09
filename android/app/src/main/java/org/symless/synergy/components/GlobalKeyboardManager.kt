@@ -286,6 +286,12 @@ open class GlobalKeyboardManager(
               106 -> { _ -> // Media Previous
                 manager?.dispatchMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
               }
+              16 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_DPAD_UP) }
+              17 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN) }
+              18 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT) }
+              19 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT) }
+              20 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER) }
+              21 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_MENU) }
               201 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F1) }
               202 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F2) }
               203 -> { _ -> manager?.dispatchKeyEvent(KeyEvent.KEYCODE_F3) }

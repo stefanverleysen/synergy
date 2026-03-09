@@ -54,6 +54,13 @@ import org.symless.synergy.client.util.logging.KLoggingManager
 
 private val log = KLoggingManager.logger("ContextPermissions")
 
+/** Check if this device is an Android TV or Fire TV */
+fun Context.isTelevision(): Boolean {
+  @Suppress("DEPRECATION")
+  return packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+      || packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TELEVISION)
+}
+
 /** Check if draw overlays is enabled for the app */
 fun Context.canDrawOverlays(): Boolean {
   return Settings.canDrawOverlays(this)

@@ -49,6 +49,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -67,6 +68,7 @@ import org.symless.synergy.client.util.logging.KLoggingManager
 import org.symless.synergy.ext.canDrawOverlays
 import org.symless.synergy.ext.isAccessibilityServiceEnabled
 import org.symless.synergy.ext.isInputMethodServiceEnabled
+import org.symless.synergy.ext.isTelevision
 import org.symless.synergy.ext.launchInputMethodServiceSettings
 import org.symless.synergy.ext.observeAccessibilityStatus
 import org.symless.synergy.ext.requestAccessibilityEnabled
@@ -206,8 +208,29 @@ fun RootScreen(appState: IAppState) {
             (if (canDrawOverlays && accessibilityEnabled && imeEnabled) 1 else 0)
 
           val allCoreGranted = canDrawOverlays && accessibilityEnabled && imeEnabled
+          val isTV = context.isTelevision()
+          var setupSkipped by remember { mutableStateOf(false) }
+          val onSkipSetup = { setupSkipped = true }
 
-          if (!allCoreGranted || (notificationsPermissionState != null && !notificationsPermissionState.status.isGranted) || (nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted)) {
+          if (isTV && !accessibilityEnabled && !setupSkipped) {
+            SetupWizard(
+              onSkip = onSkipSetup,
+              step = SetupStep(
+                stepNumber = 1,
+                totalSteps = 1,
+                title = "Enable Accessibility Service",
+                instructions = listOf(
+                  "Press the button below to open Accessibility settings.",
+                  "Find \"Synergy Android\" and select it.",
+                  "Turn the service ON and confirm.",
+                  "Press Back to return here.",
+                ),
+                buttonText = "Open Accessibility Settings",
+                isCompleted = false,
+                onAction = { context.requestAccessibilityEnabled() },
+              ),
+            )
+          } else if (!isTV && !setupSkipped && (!allCoreGranted || (notificationsPermissionState != null && !notificationsPermissionState.status.isGranted) || (nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted))) {
             Crossfade(
               targetState = completedSteps,
               modifier = Modifier.padding(innerPadding).fillMaxSize(),
@@ -215,6 +238,7 @@ fun RootScreen(appState: IAppState) {
             ) { _ ->
               when {
                 !canDrawOverlays -> SetupWizard(
+                  onSkip = onSkipSetup,
                   step = SetupStep(
                     stepNumber = 1,
                     totalSteps = totalSteps,
@@ -231,6 +255,7 @@ fun RootScreen(appState: IAppState) {
                   ),
                 )
                 !accessibilityEnabled -> SetupWizard(
+                  onSkip = onSkipSetup,
                   step = SetupStep(
                     stepNumber = 2,
                     totalSteps = totalSteps,
@@ -247,6 +272,7 @@ fun RootScreen(appState: IAppState) {
                   ),
                 )
                 !imeEnabled -> SetupWizard(
+                  onSkip = onSkipSetup,
                   step = SetupStep(
                     stepNumber = 3,
                     totalSteps = totalSteps,
@@ -263,6 +289,7 @@ fun RootScreen(appState: IAppState) {
                   ),
                 )
                 notificationsPermissionState != null && !notificationsPermissionState.status.isGranted -> SetupWizard(
+                  onSkip = onSkipSetup,
                   step = SetupStep(
                     stepNumber = completedSteps + 1,
                     totalSteps = totalSteps,
@@ -278,6 +305,7 @@ fun RootScreen(appState: IAppState) {
                   ),
                 )
                 nearbyDevicesPermissionState != null && !nearbyDevicesPermissionState.status.isGranted -> SetupWizard(
+                  onSkip = onSkipSetup,
                   step = SetupStep(
                     stepNumber = completedSteps + 1,
                     totalSteps = totalSteps,

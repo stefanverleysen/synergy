@@ -100,7 +100,7 @@ class FullDuplexSocket(
 
   /** Start the socket connection. */
   fun start() {
-    log.trace { "Connecting to $host:$port" }
+    log.info { "Connecting to $host:$port (tls=$useTls)" }
     synchronized(threadLock) {
       if (thread != null || isRunning) {
         return@start
@@ -256,7 +256,7 @@ class FullDuplexSocket(
 
   private fun runLoop() {
 
-    log.trace { "Socket thread started" }
+    log.info { "Socket thread started" }
 
     try {
       selector = Selector.open()
@@ -530,8 +530,11 @@ class FullDuplexSocket(
 
   companion object {
 
-    private val log =
+    private val log = try {
+      KLoggingManager.forwardingLogger(FullDuplexSocket::class.java.simpleName)
+    } catch (_: Throwable) {
       KLoggingManager.logger(FullDuplexSocket::class.java.simpleName)
+    }
 
 
   }

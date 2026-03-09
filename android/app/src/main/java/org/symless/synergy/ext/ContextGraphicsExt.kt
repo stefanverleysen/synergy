@@ -26,6 +26,8 @@ package org.symless.synergy.ext
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.os.Build
+import android.util.DisplayMetrics
 import android.view.WindowManager
 import org.symless.synergy.client.models.Size
 import org.symless.synergy.client.models.SizeF
@@ -41,16 +43,26 @@ data class ScreenSize(val px: Size, val dp: SizeF, val scale: Float)
 fun Context.getScreenSize(displayId: Int? = null): ScreenSize {
     val displayContext = if (displayId != null) {
         val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        val display = displayManager.getDisplay(displayId) ?: this.display!!
+        val display = displayManager.getDisplay(displayId)
+            ?: displayManager.getDisplay(android.view.Display.DEFAULT_DISPLAY)!!
         createDisplayContext(display)
     } else {
         this
     }
 
     val wm = displayContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    val bounds = wm.maximumWindowMetrics.bounds
-    val widthPx = bounds.width()
-    val heightPx = bounds.height()
+    val widthPx: Int
+    val heightPx: Int
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val bounds = wm.maximumWindowMetrics.bounds
+        widthPx = bounds.width()
+        heightPx = bounds.height()
+    } else {
+        @Suppress("DEPRECATION")
+        val metrics = DisplayMetrics().also { wm.defaultDisplay.getRealMetrics(it) }
+        widthPx = metrics.widthPixels
+        heightPx = metrics.heightPixels
+    }
     val density = displayContext.resources.displayMetrics.density
     val widthDp = widthPx / density
     val heightDp = heightPx / density

@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,9 +53,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.symless.synergy.BuildConfig
 import org.symless.synergy.R
 import org.symless.synergy.data.aidl.ConnectionState
 import org.symless.synergy.ext.adjustBrightness
+import org.symless.synergy.ext.isTelevision
 import org.symless.synergy.ui.components.preview.PreviewAppState
 import org.symless.synergy.ui.components.preview.PreviewSynergyThemedRoot
 import org.symless.synergy.ui.theme.LocalSynergyExtendedColorScheme
@@ -141,8 +144,11 @@ fun ConnectionStatusWidget(
   appState: IAppState = LocalAppState.current,
   style: SynergyCardStyle = synergyCardWidgetStyleDefaults(),
 ) {
+  val context = LocalContext.current
   val extColorScheme = LocalSynergyExtendedColorScheme.current
   val connState by appState.connectionStateFlow.collectAsStateWithLifecycle()
+  val deviceType = if (context.isTelevision()) "TV" else "Mobile"
+  val deviceInfo = "v${BuildConfig.VERSION_NAME} $deviceType, Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})"
 
   SynergyCardWidget(
     style =
@@ -155,6 +161,12 @@ fun ConnectionStatusWidget(
         Text(
           text = stringResource(R.string.connection_status_widget_title),
           style = MaterialTheme.typography.titleLarge,
+        )
+        Text(
+          text = deviceInfo,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(start = 8.dp),
         )
         SynergyFillSpacer()
         ConnectionStatusLabel(connState)

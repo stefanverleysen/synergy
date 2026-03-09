@@ -351,6 +351,10 @@ class Client(
   }
 
   companion object {
-    private val log = KLoggingManager.logger(Client::class.java.simpleName)
+    private val log = try {
+      KLoggingManager.forwardingLogger(Client::class.java.simpleName)
+    } catch (_: Throwable) {
+      KLoggingManager.logger(Client::class.java.simpleName)
+    }
   }
 }

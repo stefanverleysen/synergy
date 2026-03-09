@@ -127,10 +127,20 @@
     "actionId": 20,
     "label": "Dpad Center",
     "defaultShortcutKeys":  [
+      "Return",
+      "KP_Enter",
       "Meta+Return",
       "Super+Return"
     ],
-    "ignoreIME": false
+    "ignoreIME": true
+  },
+  {
+    "actionId": 21,
+    "label": "Menu",
+    "defaultShortcutKeys":  [
+      "Tab"
+    ],
+    "ignoreIME": true
   },
   {
     "actionId": 101,

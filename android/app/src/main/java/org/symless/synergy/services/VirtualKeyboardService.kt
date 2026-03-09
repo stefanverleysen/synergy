@@ -201,6 +201,7 @@ class VirtualKeyboardService : InputMethodService() {
 
   private var connectionStateMonitorJob: Job? = null
   private var imePickerDelayJob: Job? = null
+  private var pickerShownThisSession = false
 
   override fun onUpdateExtractedText(token: Int, text: ExtractedText?) {
     super.onUpdateExtractedText(token, text)
@@ -300,20 +301,23 @@ class VirtualKeyboardService : InputMethodService() {
           imePickerDelayJob = null
         }
 
-        // Only show IME picker if we were previously connected and now we're not
-        // Skip the initial state to avoid showing picker on service startup
-        if (previouslyConnected == true && !currentlyConnected) {
-          log.info { "Connection lost or disabled, scheduling IME picker in 10 seconds" }
+        // Show IME picker once when first disconnecting so user can switch back
+        if (previouslyConnected == true && !currentlyConnected && !pickerShownThisSession) {
+          log.info { "Connection lost, scheduling IME picker in 10 seconds" }
 
-          // Cancel any existing delay job
           imePickerDelayJob?.cancel()
 
-          // Start new delay job
           imePickerDelayJob = serviceScope.launch {
             delay(10_000)
             log.info { "10 seconds elapsed since disconnect, showing IME picker" }
+            pickerShownThisSession = true
             showIMEPicker()
           }
+        }
+
+        // Reset the guard when we reconnect so it can fire once on next disconnect
+        if (currentlyConnected) {
+          pickerShownThisSession = false
         }
 
         previouslyConnected = currentlyConnected

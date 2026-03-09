@@ -76,6 +76,7 @@ data class SetupStep(
 @Composable
 fun SetupWizard(
   step: SetupStep,
+  onSkip: (() -> Unit)? = null,
 ) {
   Column(
     modifier = Modifier
@@ -206,6 +207,27 @@ fun SetupWizard(
             fontWeight = FontWeight.SemiBold,
             fontSize = 15.sp,
           )
+        }
+
+        if (onSkip != null) {
+          Spacer(modifier = Modifier.height(8.dp))
+          Button(
+            onClick = onSkip,
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(48.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+              containerColor = Color.Transparent,
+              contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+          ) {
+            Text(
+              text = "Skip Setup (grant permissions via ADB)",
+              fontWeight = FontWeight.Normal,
+              fontSize = 14.sp,
+            )
+          }
         }
       }
     }
